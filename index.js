@@ -1,9 +1,23 @@
-const fs = require('fs');
 const axios = require('axios');
 const pdf = require('pdf-parse');
 const express = require('express');
-const port = 3000;
+const port = 4000;
 const app = express();
+
+app.get('/process-gazette', async (req, res) => {
+    const {url} = req.query;
+
+    const pdf = await downloadPDF(url);
+
+    const data = await parsePDF(pdf);
+
+    res.json(data);
+});
+
+app.listen(port, () => {
+    console.log(`Server running on port ${port}`);
+
+});
 
 // Descargar el PDF desde la URL
 async function downloadPDF(url) {
@@ -19,7 +33,6 @@ async function downloadPDF(url) {
 async function parsePDF(pdfBuffer) {
     try {
         const data = await pdf(pdfBuffer);
-        console.log("Texto extraído:");
 
         // Obtener el texto en una sola línea
         let text = data.text.replace(/\n+/g, ' ').replace(/\s+/g, ' ').trim();
@@ -37,10 +50,7 @@ async function parsePDF(pdfBuffer) {
                 decretosFormateados.push(decreto)
             });
 
-            console.log("Decretos formateados:");
-            decretosFormateados.forEach((decreto, index) => {
-                console.log(`Decreto ${index + 1}:\n${decreto}\n`);
-            });
+            return decretosFormateados;
         } else {
             console.log("No se encontraron decretos en el texto.");
         }
@@ -50,7 +60,7 @@ async function parsePDF(pdfBuffer) {
 }
 
 // URL del PDF que deseas procesar
-const pdfURL = 'https://boletin.chubut.gov.ar/archivos/boletines/Mayo%2005,%202021.pdf';
+// const pdfURL = 'https://boletin.chubut.gov.ar/archivos/boletines/Noviembre%205,%202024.pdf';
 
 // Descargar y parsear el PDF
-downloadPDF(pdfURL).then(parsePDF);
+// downloadPDF(pdfURL).then(parsePDF);
