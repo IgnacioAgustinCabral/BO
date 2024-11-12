@@ -7,16 +7,15 @@ const app = express();
 app.get('/process-gazette', async (req, res) => {
     const {url} = req.query;
 
-    const pdf = await downloadPDF(url);
+    const pdfBuffer = await downloadPDF(url);
 
-    const data = await parsePDF(pdf);
+    const data = await parsePDF(pdfBuffer);
 
     res.json(data);
 });
 
 app.listen(port, () => {
     console.log(`Server running on port ${port}`);
-
 });
 
 // Descargar el PDF desde la URL
@@ -41,26 +40,30 @@ async function parsePDF(pdfBuffer) {
         const regex = /Decreto N°[\s\S]+?Lic\. IGNACIO AGUST[ÍI]N TORRES/g;
 
         // Aplicar la expresión regular para obtener los bloques de texto
-        const decretos = text.match(regex);
-        let decretosFormateados = [];
-        if (decretos) {
-            decretos.forEach((decreto, index) => {
-                decreto = decreto.replace(/([;])/g, '$1\n');
-                decreto = decreto.replace(/- (\w)/g, '$1');
-                decretosFormateados.push(decreto)
+        const decrees = text.match(regex);
+        let formattedDecrees = [];
+        if (decrees) {
+            decrees.forEach(decree => {
+                const titleMatch = decree.match(/Decreto N°\s*\d+/); // Captura "Decreto N° X"
+                const title = titleMatch ? titleMatch[0] : "Título no encontrado";
+
+                let content = decree.replace(/(;)/g, '$1\n')
+                    .replace(/- (\w)/g, '$1')
+                    .replace(/Lic\. IGNACIO AGUST[ÍI]N TORRES/g, '').trim();
+
+                formattedDecrees.push({
+                    decreto: title,
+                    content: content
+                });
             });
 
-            return decretosFormateados;
+            return formattedDecrees;
         } else {
-            console.log("No se encontraron decretos en el texto.");
+            console.log("No se encontraron decrees en el texto.");
+            return [];
         }
     } catch (error) {
         console.error("Error al procesar el PDF:", error);
+        return [];
     }
 }
-
-// URL del PDF que deseas procesar
-// const pdfURL = 'https://boletin.chubut.gov.ar/archivos/boletines/Noviembre%205,%202024.pdf';
-
-// Descargar y parsear el PDF
-// downloadPDF(pdfURL).then(parsePDF);
