@@ -5,7 +5,7 @@ const port = 4000;
 const app = express();
 const fs = require('fs');
 
-app.get('/process-gazette', async (req, res) => {
+app.get('/process-bulletin', async (req, res) => {
     const {url} = req.query;
 
     const pdfBuffer = await downloadPDF(url);
@@ -18,7 +18,6 @@ app.listen(port, () => {
     console.log(`Server running on port ${port}`);
 });
 
-// Descargar el PDF desde la URL
 async function downloadPDF(url) {
     const response = await axios({
         method: 'get',
@@ -56,6 +55,7 @@ async function parsePDF(pdfBuffer) {
                     const titleMatch = decree.match(/Decreto N°\s*\d+/); // Captura "Decreto N° X"
                     let title = titleMatch ? titleMatch[0] : "Título no encontrado";
                     title = title.replace("Decreto", "Decreto Provincial");
+                    title = 'Auditoria Legislativa - ' + title;
                     let content = decree.replace(/(;)/g, '$1\n')
                         .replace(/- (\w)/g, '$1')
                         .replace(/Lic\. IGNACIO AGUST[ÍI]N TORRES/g, '').trim();
