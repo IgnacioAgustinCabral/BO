@@ -35,7 +35,7 @@ async function parsePDF(pdfBuffer) {
         let text = pdfData.text.replace(/\n+/g, ' ').replace(/\s+/g, ' ').trim();
 
         // Usar matchAll para capturar los grupos correctamente
-        const provincialDecreeSectionRegex = /DECRETOS PROVINCIALES(.*?)(?=DECRETOS SINTETIZADOS)/g;
+        const provincialDecreeSectionRegex = /DECRETOS PROVINCIALES(.*?)(?=(DECRETOS SINTETIZADOS|DECRETO SINTETIZADO))/g;
         const matches = [...text.matchAll(provincialDecreeSectionRegex)];
 
         if (matches.length > 1) {
@@ -54,7 +54,7 @@ async function parsePDF(pdfBuffer) {
                     const titleMatch = decree.match(/Decreto\.? N°\s*\d+/); // Captura "Decreto N° X"
                     let title = titleMatch ? titleMatch[0] : "Título no encontrado";
                     title = title.replace(/Decreto\.?/, "Decreto Provincial");
-                    title = 'Auditoria Legislativa - ' + title;
+                    title = 'Auditoría Legislativa - ' + title;
                     let content = decree.replace(/(;)/g, '$1\n')
                         .replace(/- (\w)/g, '$1')
                         .replace(/Lic\. IGNACIO AGUST[ÍI]N TORRES/g, '').trim();
