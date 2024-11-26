@@ -30,10 +30,9 @@ async function downloadPDF(url) {
 // Procesar el PDF
 async function parsePDF(pdfBuffer) {
     try {
-        const data = await pdf(pdfBuffer);
-
+        const pdfData = await pdf(pdfBuffer);
         // Obtener el texto en una sola línea
-        let text = data.text.replace(/\n+/g, ' ').replace(/\s+/g, ' ').trim();
+        let text = pdfData.text.replace(/\n+/g, ' ').replace(/\s+/g, ' ').trim();
 
         // Usar matchAll para capturar los grupos correctamente
         const provincialDecreeSectionRegex = /DECRETOS PROVINCIALES(.*?)(?=DECRETOS SINTETIZADOS)/g;
@@ -42,9 +41,9 @@ async function parsePDF(pdfBuffer) {
         if (matches.length > 1) {
             // Acceder al segundo match y al segundo grupo (grupo 1)
             let decreeSection = matches[1][1];  // matches[1] es el segundo match, [1] es el segundo grupo (contenido entre las frases)
-
+            fs.writeFileSync('decrees.txt', decreeSection);
             // Expresión regular para capturar cada bloque "Decreto N° ... Lic. IGNACIO AGUSTIN TORRES"
-            const decreeRegex = /Decreto N°[\s\S]+?Lic\. IGNACIO AGUST[ÍI]N TORRES/g;
+            const decreeRegex = /Decreto\.? N° \d{1,4}.*?Lic\. IGNACIO AGUST[ÍI]N TORRES/g;
 
             // Aplicar la expresión regular para obtener los bloques de texto
             const decrees = decreeSection.match(decreeRegex);
@@ -52,9 +51,9 @@ async function parsePDF(pdfBuffer) {
             let formattedDecrees = [];
             if (decrees) {
                 decrees.forEach(decree => {
-                    const titleMatch = decree.match(/Decreto N°\s*\d+/); // Captura "Decreto N° X"
+                    const titleMatch = decree.match(/Decreto\.? N°\s*\d+/); // Captura "Decreto N° X"
                     let title = titleMatch ? titleMatch[0] : "Título no encontrado";
-                    title = title.replace("Decreto", "Decreto Provincial");
+                    title = title.replace(/Decreto\.?/, "Decreto Provincial");
                     title = 'Auditoria Legislativa - ' + title;
                     let content = decree.replace(/(;)/g, '$1\n')
                         .replace(/- (\w)/g, '$1')
