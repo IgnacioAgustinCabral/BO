@@ -3,7 +3,6 @@ const pdf = require('pdf-parse');
 const express = require('express');
 const port = 4000;
 const app = express();
-const fs = require('fs');
 
 app.get('/process-bulletin', async (req, res) => {
     const {url} = req.query;
@@ -32,50 +31,88 @@ async function parsePDF(pdfBuffer) {
     try {
         const pdfData = await pdf(pdfBuffer);
         // Obtener el texto en una sola línea
-        let text = pdfData.text.replace(/\n+/g, ' ').replace(/\s+/g, ' ').trim();
+        let text = pdfData.text;
+        text = text.replace(/\s{2,}/g, ' '); //reemplaza 2 o mas espacios por uno
+        text = text.replace(/FRANQUEO A PAGAR\n(.*?)[Ss]ecci[óo]n [Oo]ficial/s, ''); //elimina esta sección
+        text = text.replace(/([a-zA-ZáéíóúÁÉÍÓÚüÜñÑ])-\n([a-zA-ZáéíóúÁÉÍÓÚüÜñÑ])/g, "$1$2"); //junta las palabras separadas por guión
 
-        // Usar matchAll para capturar los grupos correctamente
-        const provincialDecreeSectionRegex = /DECRETOS PROVINCIALES(.*?)(?=(DECRETOS SINTETIZADOS|DECRETO SINTETIZADO))/g;
-        const matches = [...text.matchAll(provincialDecreeSectionRegex)];
+        const sectionsRegex = /(DECRETO PROVINCIAL\n|DECRETOS PROVINCIALES\n|DECRETO SINTETIZADO\n|DECRETOS SINTETIZADOS\n|RESOLUCIONES\n|RESOLUCI[ÓO]N\n|RESOLUCIONES SINTETIZADAS\n|RESOLUCI[ÓO]N SINTETIZADA\n)([\s\S]*?)(?=(DECRETO PROVINCIAL\n|DECRETOS PROVINCIALES\n|DECRETO SINTETIZADO\n|DECRETOS SINTETIZADOS\n|RESOLUCIONES\n|RESOLUCI[ÓO]N\n|RESOLUCIONES SINTETIZADAS\n|RESOLUCI[ÓO]N SINTETIZADA\n|Secci[óo]n General|$))/g;
+        const sections = [];
+        let match;
 
-        if (matches.length > 1) {
-            // Acceder al segundo match y al segundo grupo (grupo 1)
-            let decreeSection = matches[1][1];  // matches[1] es el segundo match, [1] es el segundo grupo (contenido entre las frases)
-            fs.writeFileSync('decrees.txt', decreeSection);
-            // Expresión regular para capturar cada bloque "Decreto N° ... Lic. IGNACIO AGUSTIN TORRES"
-            const decreeRegex = /Decreto\.? N° \d{1,4}.*?Lic\. IGNACIO AGUST[ÍI]N TORRES/g;
+        while ((match = sectionsRegex.exec(text)) !== null) {
+            let sectionName = match[1].trim();
+            let sectionContent = match[2].trim();
 
-            // Aplicar la expresión regular para obtener los bloques de texto
-            const decrees = decreeSection.match(decreeRegex);
-
-            let formattedDecrees = [];
-            if (decrees) {
-                decrees.forEach(decree => {
-                    const titleMatch = decree.match(/Decreto\.? N°\s*\d+/); // Captura "Decreto N° X"
-                    let title = titleMatch ? titleMatch[0] : "Título no encontrado";
-                    title = title.replace(/Decreto\.?/, "Decreto Provincial");
-                    title = 'Auditoría Legislativa - ' + title;
-                    let content = decree.replace(/(;)/g, '$1\n')
-                        .replace(/- (\w)/g, '$1')
-                        .replace(/Lic\. IGNACIO AGUST[ÍI]N TORRES/g, '').trim();
-
-                    formattedDecrees.push({
-                        title,
-                        content
-                    });
-                });
-
-                return formattedDecrees;
-            } else {
-                console.log("No se encontraron decretos en el texto.");
-                return [];
+            if (sectionName === 'RESOLUCION') {
+                sectionName = 'RESOLUCIÓN';
+            } else if (sectionName === 'RESOLUCION SINTETIZADA') {
+                sectionName = 'RESOLUCIÓN SINTETIZADA';
             }
-        } else {
-            console.log("No se encontró la sección 'DECRETOS PROVINCIALES'.");
-            return [];
+
+            sections.push({
+                sectionName,
+                sectionContent
+            });
         }
+
+        let content = [];
+
+        sections.forEach(section => {
+            const {sectionName, sectionContent} = section;
+            switch (sectionName) {
+                case 'DECRETO PROVINCIAL':
+                    break;
+
+                case 'DECRETOS PROVINCIALES':
+                    let decreeContent = processProvincialDecrees(sectionContent);
+                    content.push(...decreeContent);
+                    break;
+
+                case 'DECRETO SINTETIZADO':
+                    break;
+
+                case 'DECRETOS SINTETIZADOS':
+                    break;
+
+                case 'RESOLUCIONES':
+                    break;
+
+                case 'RESOLUCIÓN':
+                    break;
+
+                case 'RESOLUCIÓN SINTETIZADA':
+                    break;
+
+                case 'RESOLUCIONES SINTETIZADAS':
+                    break;
+            }
+        })
+        return content;
     } catch (error) {
         console.error("Error al procesar el PDF:", error);
         return [];
     }
+}
+
+
+function processProvincialDecrees(sectionContent) {
+    const decree = [];
+    const provincialDecreeRegex = /PODER EJECUTIVO(.*?)(?=PODER EJECUTIVO|$)/gs;
+    const decreeTitleRegex = /Decreto N° \d{1,4}\n/g;
+
+    let match;
+    while ((match = provincialDecreeRegex.exec(sectionContent)) !== null) {
+        let decreeContent = match[0].trim();
+        let titleMatch;
+
+        while ((titleMatch = decreeTitleRegex.exec(decreeContent)) !== null) {
+            decree.push({
+                title: 'Auditoría Legislativa - ' + 'Decreto Pronvincial - ' + titleMatch[0].trim(),
+                content: decreeContent
+            });
+        }
+    }
+
+    return decree;
 }
