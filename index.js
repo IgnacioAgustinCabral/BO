@@ -1,6 +1,7 @@
 const axios = require('axios');
 const pdf = require('pdf-parse');
 const express = require('express');
+const fs= require("node:fs");
 const port = 4000;
 const app = express();
 
@@ -40,6 +41,7 @@ async function parsePDF(pdfBuffer) {
             .replace(/BOLET[IÍ]N OFICIAL\n/g, '')
             .replace(/P[AÁ]GINA (\d+)\n(Lunes|Martes|Mi[eé]rcoles|Jueves|Viernes|S[aá]bado|Domingo)\s\d{1,2}\sde\s(Enero|Febrero|Marzo|Abril|Mayo|Junio|Julio|Agosto|Septiembre|Octubre|Noviembre|Diciembre)\sde\s\d{4}\n/gs, '');
 
+        fs.writeFileSync('text.txt', text);
         const sectionsRegex = /(DECRETO PROVINCIAL\n|DECRETOS PROVINCIALES\n|DECRETO SINTETIZADO\n|DECRETOS SINTETIZADOS\n|RESOLUCIONES\n|RESOLUCI[ÓO]N\n|RESOLUCIONES SINTETIZADAS\n|RESOLUCI[ÓO]N SINTETIZADA\n)([\s\S]*?)(?=(DECRETO PROVINCIAL\n|DECRETOS PROVINCIALES\n|DECRETO SINTETIZADO\n|DECRETOS SINTETIZADOS\n|RESOLUCIONES\n|RESOLUCI[ÓO]N\n|RESOLUCIONES SINTETIZADAS\n|RESOLUCI[ÓO]N SINTETIZADA\n|Secci[óo]n General|$))/g;
         const sections = [];
         let match;
@@ -91,6 +93,8 @@ async function parsePDF(pdfBuffer) {
                     break;
 
                 case 'RESOLUCIONES SINTETIZADAS':
+                    const synthesizedResolutions = processSynthesizedResolutions(sectionContent);
+                    content.push(...synthesizedResolutions);
                     break;
             }
         })
@@ -123,8 +127,8 @@ function processProvincialDecrees(sectionContent) {
     return decrees;
 }
 
-function formatSynthesizedDecreeSection(sectionContent) {
-    const regex = /(Dto\. N° )(\d{4})(\d{2}-\d{2}-\d{2})/;
+function formatSynthesizedDecreesSection(sectionContent) {
+    const regex = /(Dto\. N[º°] )(\d{1,4})(\d{2}-\d{2}-\d{2})/;
     const lines = sectionContent.split('\n'); // divide text into lines
     const formattedLines = [];
 
@@ -141,9 +145,9 @@ function formatSynthesizedDecreeSection(sectionContent) {
 }
 
 function processSynthesizedDecrees(sectionContent) {
-    const formattedContent = formatSynthesizedDecreeSection(sectionContent);
+    const formattedContent = formatSynthesizedDecreesSection(sectionContent);
     const synthesizedDecrees = [];
-    const synthesizedDecreeRegex = /Dto\. N° \d{4}(.*?)(?=Dto\. N° \d{4}|$)/gs;
+    const synthesizedDecreeRegex = /Dto\. N° \d{1,4}(.*?)(?=Dto\. N° \d{1,4}|$)/gs;
     const decreeRegex = /Dto\. N° \d{4}\n/gs;
 
     let match;
@@ -161,4 +165,85 @@ function processSynthesizedDecrees(sectionContent) {
 
     return synthesizedDecrees;
 }
+
+function formatSynthesizedResolutionsSection(sectionContent) {
+    const regex = /(Res. N[º°] )([IVXLCDM]+-\d+|\d+)(\d{2}-\d{2}-\d{2})/;
+    const lines = sectionContent.split('\n'); // divide text into lines
+    const formattedLines = [];
+
+    for (const line of lines) {
+        const match = line.match(regex);
+        if (match) {
+            formattedLines.push(`${match[1]}${match[2]}\n${match[3]}`);
+        } else {
+            formattedLines.push(line);
+        }
+    }
+
+    return formattedLines.join('\n');
+}
+
+function replaceSubsectionTitles(content) {
+    // Mapeo de patrones a reemplazos
+    const replacements = {
+        'INSTITUTO PROVINCIAL DE LA VIVIENDA\nY DESARROLLO URBANO\n': 'INSTITUTO PROVINCIAL DE LA VIVIENDA Y DESARROLLO URBANO\n',
+        'RESOLUCIÓN CONJUNTA\nMINISTERIO DE SEGURIDAD Y JUSTICIA\nY MINISTERIO DE DESARROLLO HUMANO\n': 'RESOLUCIÓN CONJUNTA MINISTERIO DE SEGURIDAD Y JUSTICIA Y MINISTERIO DE DESARROLLO HUMANO\n',
+        'SECRETARÍA DE INFRAESTRUCTURA,\nENERGÍA Y PLANIFICACIÓN\n': 'SECRETARÍA DE INFRAESTRUCTURA, ENERGÍA Y PLANIFICACIÓN\n',
+        'ENTE REGULADOR DE SERVICIOS PÚBLICOS\nDE LA PROVINCIA DEL CHUBUT\n': 'ENTE REGULADOR DE SERVICIOS PÚBLICOS DE LA PROVINCIA DEL CHUBUT\n',
+        'SECRETARÍA DE AMBIENTE Y CONTROL\nDEL DESARROLLO SUSTENTABLE\n': 'SECRETARÍA DE AMBIENTE Y CONTROL DEL DESARROLLO SUSTENTABLE\n',
+    };
+
+    const regex = new RegExp(Object.keys(replacements).join('|'), 'gs');
+
+    return content.replace(regex, match => replacements[match]);
+}
+
+function getSynthesizedResolutionsSubsections(formattedContent) {
+    const subsections = [];
+    const subsectionRegex = /(INSTITUTO PROVINCIAL DE LA VIVIENDA Y DESARROLLO URBANO\n|MINISTERIO DE DESARROLLO HUMANO\n|RESOLUCIÓN CONJUNTA MINISTERIO DE SEGURIDAD Y JUSTICIA Y MINISTERIO DE DESARROLLO HUMANO\n|SECRETARÍA DE INFRAESTRUCTURA, ENERGÍA Y PLANIFICACIÓN\n|ENTE REGULADOR DE SERVICIOS PÚBLICOS DE LA PROVINCIA DEL CHUBUT\n|SECRETARÍA DE AMBIENTE Y CONTROL DEL DESARROLLO SUSTENTABLE\n|SECRETAR[IÍ]A GENERAL DE GOBIERNO\n|MINISTERIO DE SEGURIDAD Y JUSTICIA\n|SUBSECRETAR[IÍ]A DE TRABAJO\n|SECRETAR[IÍ]A DE SALUD\n|SECRETAR[IÍ]A DE CIENCIA Y TECNOLOG[IÍ]A\n|ESCRIBAN[IÍ]A GENERAL DE GOBIERNO\n|SECRETAR[IÍ]A DE BOSQUES\n|INSTITUTO PROVINCIAL DEL AGUA\n|SECRETAR[IÍ]A DE AMBIENTE Y CONTROL DEL DESARROLLO SUSTENTABLE\n)([\s\S]*?)(?=(INSTITUTO PROVINCIAL DE LA VIVIENDA Y DESARROLLO URBANO\n|MINISTERIO DE DESARROLLO HUMANO\n|RESOLUCIÓN CONJUNTA MINISTERIO DE SEGURIDAD Y JUSTICIA Y MINISTERIO DE DESARROLLO HUMANO\n|SECRETARÍA DE INFRAESTRUCTURA, ENERGÍA Y PLANIFICACIÓN\n|ENTE REGULADOR DE SERVICIOS PÚBLICOS DE LA PROVINCIA DEL CHUBUT\n|SECRETARÍA DE AMBIENTE Y CONTROL DEL DESARROLLO SUSTENTABLE\n|SECRETAR[IÍ]A GENERAL DE GOBIERNO\n|MINISTERIO DE SEGURIDAD Y JUSTICIA\n|SUBSECRETAR[IÍ]A DE TRABAJO\n|SECRETAR[IÍ]A DE SALUD\n|SECRETAR[IÍ]A DE CIENCIA Y TECNOLOG[IÍ]A\n|ESCRIBAN[IÍ]A GENERAL DE GOBIERNO\n|SECRETAR[IÍ]A DE BOSQUES\n|INSTITUTO PROVINCIAL DEL AGUA\n|SECRETAR[IÍ]A DE AMBIENTE Y CONTROL DEL DESARROLLO SUSTENTABLE\n|$))/gs;
+    let match;
+
+    while ((match = subsectionRegex.exec(formattedContent)) !== null) {
+        let subsectionName = match[1].trim();
+        let subsectionContent = match[2].trim();
+
+        subsections.push({
+            subsectionName,
+            subsectionContent
+        });
+    }
+
+    return subsections;
+}
+
+
+function processSynthesizedResolutions(sectionContent) {
+    const formattedContent = formatSynthesizedResolutionsSection(sectionContent);
+    const normalizedContent = replaceSubsectionTitles(formattedContent);
+    const subsections = getSynthesizedResolutionsSubsections(normalizedContent);
+
+    const synthesizedResolutions = [];
+    const synthesizedResolutionRegex = /(Res. N[º°] )([IVXLCDM]+-\d+|\d+)(.*?)(?=(Res. N[º°] )([IVXLCDM]+-\d+|\d+)|$)/gs;
+    const resolutionRegex = /(Res. N[º°] )([IVXLCDM]+-\d+|\d+)\n/gs;
+
+    subsections.forEach(subsection => {
+        const {subsectionName, subsectionContent} = subsection;
+        let match;
+
+        while ((match = synthesizedResolutionRegex.exec(subsectionContent)) !== null) {
+            let synthesizedResolutionContent = match[0].trim();
+            let titleMatch;
+
+            while ((titleMatch = resolutionRegex.exec(synthesizedResolutionContent)) !== null) {
+                synthesizedResolutions.push({
+                    title: 'Auditoría Legislativa - ' + 'Resolución Sintetizada - ' + titleMatch[0].trim(),
+                    content: subsectionName + '\n' + synthesizedResolutionContent
+                });
+            }
+        }
+    });
+
+    return synthesizedResolutions;
+}
+
 
