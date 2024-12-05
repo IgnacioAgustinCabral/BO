@@ -1,17 +1,27 @@
 {
-  "name": "testnode",
+  "name": "bo",
   "version": "1.0.0",
+  "description": "Boletin Oficial PDF Parser and Scraper",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": [],
-  "author": "",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/IgnacioAgustinCabral/BO.git"
+  },
+  "author": "Ignacio Cabral",
   "license": "ISC",
-  "description": "",
+  "bugs": {
+    "url": "https://github.com/IgnacioAgustinCabral/BO/issues"
+  },
+  "homepage": "https://github.com/IgnacioAgustinCabral/BO#readme",
   "dependencies": {
-    "axios": "^1.7.7",
-    "express": "^4.19.2",
+    "axios": "^1.7.9",
+    "express": "^4.21.2",
     "pdf-parse": "^1.1.1"
+  },
+  "engines": {
+    "node": "16"
   }
 }
