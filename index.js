@@ -1,6 +1,7 @@
 const axios = require('axios');
 const pdf = require('pdf-parse');
 const express = require('express');
+const fs = require("node:fs");
 const port = 4000;
 const app = express();
 
@@ -39,7 +40,7 @@ async function parsePDF(pdfBuffer) {
             .replace(/BOLET[IÍ]N OFICIAL\n/g, '') //eliminates
             .replace(/P[AÁ]GINA (\d+)\n(Lunes|Martes|Mi[eé]rcoles|Jueves|Viernes|S[aá]bado|Domingo)\s\d{1,2}\sde\s(Enero|Febrero|Marzo|Abril|Mayo|Junio|Julio|Agosto|Septiembre|Octubre|Noviembre|Diciembre)\sde\s\d{4}\n/gs, ''); //eliminates page number and date
 
-        const sectionsRegex = /(DECRETO PROVINCIAL\n|DECRETOS PROVINCIALES\n|DECRETO SINTETIZADO\n|DECRETOS SINTETIZADOS\n|RESOLUCIONES\n|RESOLUCI[ÓO]N\n|RESOLUCIONES SINTETIZADAS\n|RESOLUCI[ÓO]N SINTETIZADA\n|DISPOSICI[OÓ]N\n|DISPOSICIONES\n|ACUERDO\n|ACUERDOS\n|DICT[ÁA]MEN\n|DICT[ÁA]MENES\n|DISPOSICI[OÓ]N SINTETIZADA\n|DISPOSICIONES SINTETIZADAS\n)([\s\S]*?)(?=(?!\1)(DECRETO PROVINCIAL\n|DECRETOS PROVINCIALES\n|DECRETO SINTETIZADO\n|DECRETOS SINTETIZADOS\n|RESOLUCIONES\n|RESOLUCI[ÓO]N\n|RESOLUCIONES SINTETIZADAS\n|RESOLUCI[ÓO]N SINTETIZADA\n|DISPOSICI[OÓ]N\n|DISPOSICIONES\n|ACUERDO\n|ACUERDOS\n|DICT[ÁA]MEN\n|DICT[ÁA]MENES\n|DISPOSICI[OÓ]N SINTETIZADA\n|DISPOSICIONES SINTETIZADAS\n|Secci[óo]n General|$))/g;
+        const sectionsRegex = /(LEY PROVINCIAL\n|LEYES PROVINCIALES\n|DECRETO PROVINCIAL\n|DECRETOS PROVINCIALES\n|DECRETO SINTETIZADO\n|DECRETOS SINTETIZADOS\n|RESOLUCIONES\n|RESOLUCI[ÓO]N\n|RESOLUCIONES SINTETIZADAS\n|RESOLUCI[ÓO]N SINTETIZADA\n|DISPOSICI[OÓ]N\n|DISPOSICIONES\n|ACUERDO\n|ACUERDOS\n|DICT[ÁA]MEN\n|DICT[ÁA]MENES\n|DISPOSICI[OÓ]N SINTETIZADA\n|DISPOSICIONES SINTETIZADAS\n)([\s\S]*?)(?=(?!\1)(LEY PROVINCIAL\n|LEYES PROVINCIALES\n|DECRETO PROVINCIAL\n|DECRETOS PROVINCIALES\n|DECRETO SINTETIZADO\n|DECRETOS SINTETIZADOS\n|RESOLUCIONES\n|RESOLUCI[ÓO]N\n|RESOLUCIONES SINTETIZADAS\n|RESOLUCI[ÓO]N SINTETIZADA\n|DISPOSICI[OÓ]N\n|DISPOSICIONES\n|ACUERDO\n|ACUERDOS\n|DICT[ÁA]MEN\n|DICT[ÁA]MENES\n|DISPOSICI[OÓ]N SINTETIZADA\n|DISPOSICIONES SINTETIZADAS\n|Secci[óo]n General|$))/g;
         const sections = [];
         let match;
 
@@ -64,6 +65,16 @@ async function parsePDF(pdfBuffer) {
         sections.forEach(section => {
             const {sectionName, sectionContent} = section;
             switch (sectionName) {
+                case 'LEY PROVINCIAL':
+                    const provincialLaw = processProvincialLaws(sectionContent);
+                    content.push(...provincialLaw);
+                    break;
+
+                case 'LEYES PROVINCIALES':
+                    const provincialLaws = processProvincialLaws(sectionContent);
+                    content.push(...provincialLaws);
+                    break;
+
                 case 'DECRETO PROVINCIAL':
                     break;
 
@@ -106,6 +117,33 @@ async function parsePDF(pdfBuffer) {
         console.error("Error al procesar el PDF:", error);
         return [];
     }
+}
+
+function processProvincialLaws(sectionContent) {
+    const lawRegex = /(?:(?!Lic\. IGNACIO AGUSTÍN TORRES\nDr\. VICTORIANO ERASO PARODI).)+Lic\. IGNACIO AGUSTÍN TORRES\nDr\. VICTORIANO ERASO PARODI/gs;
+    const lawTitleRegex = /^LEY [IVXLCDM]+ N[º°] \d+\n/gm;
+    const lawDecreeNumberRegex = /Decreto N[º°] \d+\n/gm;
+    const laws = [];
+
+    fs.writeFileSync('laws.txt', sectionContent);
+    let match;
+    while ((match = lawRegex.exec(sectionContent)) !== null) {
+        let lawContent = match[0].trim();
+        let titleMatch;
+
+        while ((titleMatch = lawTitleRegex.exec(lawContent)) !== null) {
+            let lawDecreeNumberMatch;
+
+            while ((lawDecreeNumberMatch = lawDecreeNumberRegex.exec(lawContent)) !== null) {
+                laws.push({
+                    title: 'Auditoría Legislativa - ' + 'Ley Provincial - ' + titleMatch[0].trim() + ' ' + lawDecreeNumberMatch[0].trim(),
+                    content: lawContent
+                });
+            }
+        }
+    }
+
+    return laws;
 }
 
 
