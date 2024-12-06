@@ -1,7 +1,6 @@
 const axios = require('axios');
 const pdf = require('pdf-parse');
 const express = require('express');
-const fs = require("node:fs");
 const port = 4000;
 const app = express();
 
@@ -40,7 +39,7 @@ async function parsePDF(pdfBuffer) {
             .replace(/BOLET[IÍ]N OFICIAL\n/g, '') //eliminates
             .replace(/P[AÁ]GINA (\d+)\n(Lunes|Martes|Mi[eé]rcoles|Jueves|Viernes|S[aá]bado|Domingo)\s\d{1,2}\sde\s(Enero|Febrero|Marzo|Abril|Mayo|Junio|Julio|Agosto|Septiembre|Octubre|Noviembre|Diciembre)\sde\s\d{4}\n/gs, ''); //eliminates page number and date
 
-        const sectionsRegex = /(LEY PROVINCIAL\n|LEYES PROVINCIALES\n|DECRETO PROVINCIAL\n|DECRETOS PROVINCIALES\n|DECRETO SINTETIZADO\n|DECRETOS SINTETIZADOS\n|RESOLUCIONES\n|RESOLUCI[ÓO]N\n|RESOLUCI[OÓ]NES SINTETIZADAS\n|RESOLUCI[ÓO]N SINTETIZADA\n|DISPOSICI[OÓ]N\n|DISPOSICIONES\n|ACUERDO\n|ACUERDOS\n|DICT[ÁA]MEN\n|DICT[ÁA]MENES\n|DISPOSICI[OÓ]N SINTETIZADA\n|DISPOSICIONES SINTETIZADAS\n|REGISTRO DE\nPUBLICIDAD OFICIAL\n|DECLARACIONES\n|DECLARACI[OÓ]N\n)([\s\S]*?)(?=(?!\1)(LEY PROVINCIAL\n|LEYES PROVINCIALES\n|DECRETO PROVINCIAL\n|DECRETOS PROVINCIALES\n|DECRETO SINTETIZADO\n|DECRETOS SINTETIZADOS\n|RESOLUCIONES\n|RESOLUCI[ÓO]N\n|RESOLUCI[OÓ]NES SINTETIZADAS\n|RESOLUCI[ÓO]N SINTETIZADA\n|DISPOSICI[OÓ]N\n|DISPOSICIONES\n|ACUERDO\n|ACUERDOS\n|DICT[ÁA]MEN\n|DICT[ÁA]MENES\n|DISPOSICI[OÓ]N SINTETIZADA\n|DISPOSICIONES SINTETIZADAS\n|REGISTRO DE\nPUBLICIDAD OFICIAL\n|DECLARACIONES\n|DECLARACI[OÓ]N\n|Secci[óo]n General|$))/g;
+        const sectionsRegex = /^(LEY PROVINCIAL\n|LEYES PROVINCIALES\n|DECRETO PROVINCIAL\n|DECRETOS PROVINCIALES\n|DECRETO SINTETIZADO\n|DECRETOS SINTETIZADOS\n|RESOLUCIONES\n|RESOLUCI[ÓO]N\n|RESOLUCI[ÓO]NES SINTETIZADAS\n|RESOLUCI[ÓO]N SINTETIZADA\n|DISPOSICI[ÓO]N\n|DISPOSICIONES\n|ACUERDO\n|ACUERDOS\n|DICT[ÁA]MEN\n|DICT[ÁA]MENES\n|DISPOSICI[ÓO]N SINTETIZADA\n|DISPOSICIONES SINTETIZADAS\n|REGISTRO DE\nPUBLICIDAD OFICIAL\n|DECLARACIONES\n|DECLARACI[ÓO]N\n)([\s\S]*?)(?=^(?!\1)^(LEY PROVINCIAL\n|LEYES PROVINCIALES\n|DECRETO PROVINCIAL\n|DECRETOS PROVINCIALES\n|DECRETO SINTETIZADO\n|DECRETOS SINTETIZADOS\n|RESOLUCIONES\n|RESOLUCI[ÓO]N\n|RESOLUCI[ÓO]NES SINTETIZADAS\n|RESOLUCI[ÓO]N SINTETIZADA\n|DISPOSICI[ÓO]N\n|DISPOSICIONES\n|ACUERDO\n|ACUERDOS\n|DICT[ÁA]MEN\n|DICT[ÁA]MENES\n|DISPOSICI[ÓO]N SINTETIZADA\n|DISPOSICIONES SINTETIZADAS\n|REGISTRO DE\nPUBLICIDAD OFICIAL\n|DECLARACIONES\n|DECLARACI[ÓO]N\n|Secci[óo]n General|$))/gm;
         const sections = [];
         let match;
 
@@ -78,6 +77,8 @@ async function parsePDF(pdfBuffer) {
                     break;
 
                 case 'DECRETO PROVINCIAL':
+                    const decree = processProvincialDecrees(sectionContent);
+                    content.push(...decree);
                     break;
 
                 case 'DECRETOS PROVINCIALES':
@@ -86,8 +87,8 @@ async function parsePDF(pdfBuffer) {
                     break;
 
                 case 'DECRETO SINTETIZADO':
-                    const decree = processSynthesizedDecrees(sectionContent);
-                    content.push(...decree);
+                    const synthesizedDecree = processSynthesizedDecrees(sectionContent);
+                    content.push(...synthesizedDecree);
                     break;
 
                 case 'DECRETOS SINTETIZADOS':
@@ -153,7 +154,7 @@ function processProvincialLaws(sectionContent) {
 function processProvincialDecrees(sectionContent) {
     const decrees = [];
     const provincialDecreeRegex = /PODER EJECUTIVO(.*?)(?=PODER EJECUTIVO|$)/gs;
-    const decreeTitleRegex = /Decreto N° \d{1,4}\n/g;
+    const decreeTitleRegex = /Decreto\.? N° \d{1,4}\n/g;
 
     let match;
     while ((match = provincialDecreeRegex.exec(sectionContent)) !== null) {
@@ -279,7 +280,7 @@ function processSynthesizedResolutions(sectionContent) {
 
 
 function processResolutions(sectionContent) {
-    const regex = /(Res\. N[º°]) ([IVXLCDM]+-\d+|\d+)\s?(\d{2}-\d{2}-\d{2}\n)/;
+    const regex = /(Res\.? N[º°]) ([IVXLCDM]+-\d+|\d+)\s?(\d{2}-\d{2}-\d{2})/;
     const formattedContent = formatSection(sectionContent, regex);
     const replacements = {
         'HONORABLE LEGISLATURA DE LA\nPROVINCIA DEL CHUBUT\n': 'HONORABLE LEGISLATURA DE LA PROVINCIA DEL CHUBUT\n',
@@ -301,10 +302,10 @@ function processResolutions(sectionContent) {
 
         }
     });
-    fs.writeFileSync('normalitox.txt',normalizedContent);
+
     const resolutions = [];
-    const resolutionsRegex = /(RESOLUCIÓN DE SUPERINTENDENCIA ADMINISTRATIVA N[º°]\d+\/\d+-(\w+)\n|RESOLUCI[ÓO]N ADMINISTRATIVA GENERAL N[º°] \d+\/\d+\n|RESOLUCI[ÓO]N DEL TRIBUNAL N[º°] \d+\/\d+\n|RESOLUCI[ÓO]N N[º°]\d+\/\d+-HL(,)?\n|RESOLUCI[ÓO]N N[º°]\d+\/\d+(-?\.?)?\n|Resoluci[oó]n N[º°] \d+\n|Res\. N[º°] \d+\n)([\s\S]*?)(?=(?!\1)(RESOLUCIÓN DE SUPERINTENDENCIA ADMINISTRATIVA N[º°]\d+\/\d+-(\w+)\n|RESOLUCI[ÓO]N ADMINISTRATIVA GENERAL N[º°] \d+\/\d+\n|RESOLUCI[ÓO]N DEL TRIBUNAL N[º°] \d+\/\d+\n|RESOLUCI[ÓO]N N[º°]\d+\/\d+-HL\n|Resoluci[oó]n N[º°] \d+\n|Res. N[º°] \d+\n|RESOLUCI[ÓO]N N[º°]\d+\/\d+(-?\.?)?\n|$))/gs;
-    const resolutionRegex = /RESOLUCIÓN DE SUPERINTENDENCIA ADMINISTRATIVA N[º°]\d+\/\d+-(\w+)\n|RESOLUCI[ÓO]N ADMINISTRATIVA GENERAL N[º°] \d+\/\d+\n|RESOLUCI[ÓO]N DEL TRIBUNAL N[º°] \d+\/\d+\n|RESOLUCI[ÓO]N N[º°]\d+\/\d+-HL\n|RESOLUCI[ÓO]N N[º°]\d+\/\d+\n|Resoluci[oó]n N[º°] \d+\n|Res\. N[º°] \d+\n|RESOLUCI[ÓO]N N[º°]\d+\/\d+/gs;
+    const resolutionsRegex = /(RESOLUCIÓN DE SUPERINTENDENCIA ADMINISTRATIVA N[º°]\d+\/\d+-(\w+)\n|RESOLUCI[ÓO]N ADMINISTRATIVA GENERAL N[º°] \d+\/\d+\n|RESOLUCI[ÓO]N DEL TRIBUNAL N[º°] \d+\/\d+\n|RESOLUCI[ÓO]N N[º°]\d+\/\d+-HL(,)?\n|RESOLUCI[ÓO]N N[º°]\d+\/\d+(-?\.?)?\n|Resoluci[oó]n N[º°] \d+\n|Res\.? N[º°] \d+\n|Res\.? N[º°]\d+\n)([\s\S]*?)(?=(?!\1)(RESOLUCIÓN DE SUPERINTENDENCIA ADMINISTRATIVA N[º°]\d+\/\d+-(\w+)\n|RESOLUCI[ÓO]N ADMINISTRATIVA GENERAL N[º°] \d+\/\d+\n|RESOLUCI[ÓO]N DEL TRIBUNAL N[º°] \d+\/\d+\n|RESOLUCI[ÓO]N N[º°]\d+\/\d+-HL\n|Resoluci[oó]n N[º°] \d+\n|Res\.? N[º°] \d+\n|RESOLUCI[ÓO]N N[º°]\d+\/\d+(-?\.?)?\n|Res\.? N[º°]\d+\n|$))/gs;
+    const resolutionRegex = /RESOLUCIÓN DE SUPERINTENDENCIA ADMINISTRATIVA N[º°]\d+\/\d+-(\w+)\n|RESOLUCI[ÓO]N ADMINISTRATIVA GENERAL N[º°] \d+\/\d+\n|RESOLUCI[ÓO]N DEL TRIBUNAL N[º°] \d+\/\d+\n|RESOLUCI[ÓO]N N[º°]\d+\/\d+-HL\n|RESOLUCI[ÓO]N N[º°]\d+\/\d+\n|Resoluci[oó]n N[º°] \d+\n|Res\.? N[º°] \d+\n|RESOLUCI[ÓO]N N[º°]\d+\/\d+|Res\.? N[º°]\d+\n/gs;
 
     subsections.forEach(subsection => {
         const {subsectionName, subsectionContent} = subsection;
