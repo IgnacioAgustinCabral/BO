@@ -56,6 +56,8 @@ async function parsePDF(pdfBuffer) {
                 sectionName = 'RESOLUCIÓN SINTETIZADA';
             } else if (sectionName === 'RESOLUCIÓNES SINTETIZADAS') {
                 sectionName = 'RESOLUCIONES SINTETIZADAS';
+            } else if (sectionName === 'DISPOSICION SINTETIZADA') {
+                sectionName = 'DISPOSICIÓN';
             }
 
             sections.push({
@@ -117,6 +119,11 @@ async function parsePDF(pdfBuffer) {
                 case 'RESOLUCIONES SINTETIZADAS':
                     const synthesizedResolutions = processSynthesizedResolutions(sectionContent);
                     content.push(...synthesizedResolutions);
+                    break;
+
+                case 'DISPOSICIÓN SINTETIZADA':
+                    const synthesizedDisposition = processSynthesizedDisposition(sectionContent);
+                    content.push(...synthesizedDisposition);
                     break;
             }
         })
@@ -291,8 +298,8 @@ function processResolutions(sectionContent) {
         'CONSEJO PROVINCIAL\nDE RESPONSABILIDAD FISCAL\n': 'CONSEJO PROVINCIAL DE RESPONSABILIDAD FISCAL\n',
     };
     const normalizedContent = replaceSubsectionTitles(formattedContent, replacements);
-    const subsectionRegex = /(INSTITUTO PROVINCIAL DE LA VIVIENDA Y DESARROLLO URBANO\n|CONSEJO PROVINCIAL DE RESPONSABILIDAD FISCAL\n|HONORABLE LEGISLATURA DE LA PROVINCIA DEL CHUBUT\n|PODER JUDICIAL\n|TRIBUNAL DE CUENTAS\n|INSTITUTO PROVINCIAL DEL AGUA\n|DIRECCI[ÓO]N GENERAL DE RENTAS\n)([\s\S]*?)(?=(?!\1)(INSTITUTO PROVINCIAL DE LA VIVIENDA Y DESARROLLO URBANO\n|CONSEJO PROVINCIAL DE RESPONSABILIDAD FISCAL\n|HONORABLE LEGISLATURA DE LA PROVINCIA DEL CHUBUT\n|PODER JUDICIAL\n|TRIBUNAL DE CUENTAS\n|INSTITUTO PROVINCIAL DEL AGUA\n|DIRECCI[ÓO]N GENERAL DE RENTAS\n|$))/gs;
-    const subsections = getSubsections(normalizedContent, subsectionRegex);
+    const subsectionsRegex = /(INSTITUTO PROVINCIAL DE LA VIVIENDA Y DESARROLLO URBANO\n|CONSEJO PROVINCIAL DE RESPONSABILIDAD FISCAL\n|HONORABLE LEGISLATURA DE LA PROVINCIA DEL CHUBUT\n|PODER JUDICIAL\n|TRIBUNAL DE CUENTAS\n|INSTITUTO PROVINCIAL DEL AGUA\n|DIRECCI[ÓO]N GENERAL DE RENTAS\n)([\s\S]*?)(?=(?!\1)(INSTITUTO PROVINCIAL DE LA VIVIENDA Y DESARROLLO URBANO\n|CONSEJO PROVINCIAL DE RESPONSABILIDAD FISCAL\n|HONORABLE LEGISLATURA DE LA PROVINCIA DEL CHUBUT\n|PODER JUDICIAL\n|TRIBUNAL DE CUENTAS\n|INSTITUTO PROVINCIAL DEL AGUA\n|DIRECCI[ÓO]N GENERAL DE RENTAS\n|$))/gs;
+    const subsections = getSubsections(normalizedContent, subsectionsRegex);
 
     const poderJudicialRegex = /RESOLUCIÓN ADMINISTRATIVA GENERAL\nN[º°] \d+\/\d+\n|RESOLUCIÓN ADMINISTRATIVA\nGENERAL N[º°] \d+\/\d+\n|RESOLUCIÓN DE SUPERINTENDENCIA\nADMINISTRATIVA N[º°]\d+\/\d+-(\w+)\n/gs;
     //format this specific subsection
@@ -328,4 +335,41 @@ function processResolutions(sectionContent) {
     });
 
     return resolutions;
+}
+
+function processSynthesizedDisposition(sectionContent) {
+    const regex = /(Disp\.? N[º°]\s?)(\d+)(\d{2}-\d{2}-\d{2})/;
+    const formattedContent = formatSection(sectionContent, regex);
+    const replacement = {
+        'SUBSECRETARÍA DE AUTOTRANSPORTE\nTERRESTRE\n': 'SUBSECRETARÍA DE AUTOTRANSPORTE TERRESTRE\n',
+    }
+    const normalizedContent = replaceSubsectionTitles(formattedContent, replacement);
+
+    const subsectionsRegex = /(SUBSECRETAR[ÍI]A DE MINER[ÍI]A|SUBSECRETAR[ÍI]A DE AUTOTRANSPORTE TERRESTRE\n|DIRECCI[ÓO]N GENERAL DE POL[ÍI]TICA FORESTAL\n)([\s\S]*?)(?=(?!\1)(SUBSECRETAR[ÍI]A DE MINER[ÍI]A|SUBSECRETAR[ÍI]A DE AUTOTRANSPORTE TERRESTRE\n|DIRECCI[ÓO]N GENERAL DE POL[ÍI]TICA FORESTAL\n|$))/gs;
+    const subsections = getSubsections(normalizedContent, subsectionsRegex);
+
+    const dispositions = [];
+    const dispositionsGroupRegex = /(Disp\.? N[º°] \d+\n)([\s\S]*?)(?=(?!\1)(Disp\.? N[º°] \d+\n|$))/gs;
+    const dispostionRegex = /Disp\.? N[º°] \d+/gs;
+
+    console.log(subsections);
+    subsections.forEach(subsection => {
+        const {subsectionName, subsectionContent} = subsection;
+        let match;
+
+        while ((match = dispositionsGroupRegex.exec(subsectionContent)) !== null) {
+            let dispositionContent = match[0].trim();
+            let titleMatch;
+
+            while ((titleMatch = dispostionRegex.exec(dispositionContent)) !== null) {
+                dispositions.push({
+                    title: 'Auditoría Legislativa - ' + 'Disposición Sintetizada - ' + titleMatch[0].trim(),
+                    content: subsectionName + '\n' + dispositionContent
+                });
+            }
+        }
+
+    });
+
+    return dispositions;
 }
