@@ -60,6 +60,8 @@ async function parsePDF(pdfBuffer) {
                 sectionName = 'DISPOSICIÓN';
             } else if (sectionName === 'DICTAMENES') {
                 sectionName = 'DICTÁMENES';
+            } else if (sectionName === 'DISPOSICION') {
+                sectionName = 'DISPOSICIÓN';
             }
 
             sections.push({
@@ -141,6 +143,16 @@ async function parsePDF(pdfBuffer) {
                 case 'DECLARACIONES':
                     const declarations = processDeclarations(sectionContent);
                     content.push(...declarations);
+                    break;
+
+                case 'DISPOSICIÓN':
+                    const disposition = processDispositions(sectionContent);
+                    content.push(...disposition);
+                    break;
+
+                case 'DISPOSICIONES':
+                    const dispositions = processDispositions(sectionContent);
+                    content.push(...dispositions);
                     break;
             }
         })
@@ -482,3 +494,30 @@ function processDeclarations(sectionContent) {
     return declarations;
 }
 
+function processDispositions(sectionContent) {
+    const subsectionRegex = /(SUBSECRETAR[ÍI]A DE MINER[ÍI]A\n|MINISTERIO P[UÚ]BLICO FISCAL\n)([\s\S]*?)(?=(?!\1)(SUBSECRETAR[ÍI]A DE MINER[ÍI]A\n|MINISTERIO P[UÚ]BLICO FISCAL\n|$))/gs;
+    const subsections = getSubsections(sectionContent, subsectionRegex);
+
+    const dispositionGroupRegex = /(Disposici[óo]n N[º°] \d+\n)([\s\S]*?)(?=(?!\1)(Disposici[óo]n N[º°] \d+\n|$))/gs;
+    const dispositionRegex = /Disposici[óo]n N[º°] \d+\n/gs;
+
+    const dispositions = [];
+
+    subsections.forEach(subsection => {
+        const {subsectionName, subsectionContent} = subsection;
+        let match;
+        while ((match = dispositionGroupRegex.exec(subsectionContent)) !== null) {
+            let dispositionContent = match[0].trim();
+            let titleMatch;
+
+            while ((titleMatch = dispositionRegex.exec(dispositionContent)) !== null) {
+                dispositions.push({
+                    title: 'Auditoría Legislativa - ' + 'Disposición - ' + titleMatch[0].trim(),
+                    content: subsectionName + '\n' + dispositionContent
+                });
+            }
+        }
+    });
+
+    return dispositions;
+}
