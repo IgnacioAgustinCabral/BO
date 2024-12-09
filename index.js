@@ -137,6 +137,11 @@ async function parsePDF(pdfBuffer) {
                     const dictamenes = processDictamenes(sectionContent);
                     content.push(...dictamenes);
                     break;
+
+                case 'DECLARACIONES':
+                    const declarations = processDeclarations(sectionContent);
+                    content.push(...declarations);
+                    break;
             }
         })
         return content;
@@ -402,7 +407,7 @@ function processAgreements(sectionContent) {
             let titleMatch;
 
             while ((titleMatch = agreementRegex.exec(agreementContent)) !== null) {
-                let title = titleMatch[0].trim().replace(/ REGISTRADO BAJO EL/g,'');
+                let title = titleMatch[0].trim().replace(/ REGISTRADO BAJO EL/g, '');
                 agreements.push({
                     title: 'Auditoría Legislativa - ' + 'Acuerdo - ' + title,
                     content: subsectionName + '\n' + agreementContent
@@ -442,3 +447,38 @@ function processDictamenes(sectionContent) {
 
     return dictamenes;
 }
+
+function processDeclarations(sectionContent) {
+    const replacements = {
+        'HONORABLE LEGISLATURA DE LA\nPROVINCIA DEL CHUBUT\n': 'HONORABLE LEGISLATURA DE LA PROVINCIA DEL CHUBUT\n',
+    }
+    const normalizedContent = replaceSubsectionTitles(sectionContent, replacements);
+
+    const subsectionsRegex = /(HONORABLE LEGISLATURA DE LA PROVINCIA DEL CHUBUT\n)([\s\S]*?)(?=(?!\1)(HONORABLE LEGISLATURA DE LA PROVINCIA DEL CHUBUT\n|$))/gs;
+    const subsections = getSubsections(normalizedContent, subsectionsRegex);
+
+    const declarationsGruoupRegex = /(DECLARACI[ÓO]N N[º°]\d+\/\d+-HL\.\n)([\s\S]*?)(?=(?!\1)(DECLARACI[ÓO]N N[º°]\d+\/\d+-HL\.\n|$))/gs;
+    const declarationRegex = /DECLARACI[ÓO]N N[º°]\d+\/\d+-HL\.\n/gs;
+
+    const declarations = [];
+
+    subsections.forEach(subsection => {
+        const {subsectionName, subsectionContent} = subsection;
+        let match;
+        while ((match = declarationsGruoupRegex.exec(subsectionContent)) !== null) {
+            let declarationContent = match[0].trim();
+            let titleMatch;
+
+            while ((titleMatch = declarationRegex.exec(declarationContent)) !== null) {
+                let title = titleMatch[0].trim().replace(/\./g, '');
+                declarations.push({
+                    title: 'Auditoría Legislativa - ' + 'Declaración - ' + title,
+                    content: subsectionName + '\n' + declarationContent
+                });
+            }
+        }
+    });
+
+    return declarations;
+}
+
