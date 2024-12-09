@@ -125,6 +125,11 @@ async function parsePDF(pdfBuffer) {
                     const synthesizedDisposition = processSynthesizedDisposition(sectionContent);
                     content.push(...synthesizedDisposition);
                     break;
+
+                case 'ACUERDOS':
+                    const agreements = processAgreements(sectionContent);
+                    content.push(...agreements);
+                    break;
             }
         })
         return content;
@@ -350,9 +355,8 @@ function processSynthesizedDisposition(sectionContent) {
 
     const dispositions = [];
     const dispositionsGroupRegex = /(Disp\.? N[º°] \d+\n)([\s\S]*?)(?=(?!\1)(Disp\.? N[º°] \d+\n|$))/gs;
-    const dispostionRegex = /Disp\.? N[º°] \d+/gs;
+    const dispositionRegex = /Disp\.? N[º°] \d+/gs;
 
-    console.log(subsections);
     subsections.forEach(subsection => {
         const {subsectionName, subsectionContent} = subsection;
         let match;
@@ -361,7 +365,7 @@ function processSynthesizedDisposition(sectionContent) {
             let dispositionContent = match[0].trim();
             let titleMatch;
 
-            while ((titleMatch = dispostionRegex.exec(dispositionContent)) !== null) {
+            while ((titleMatch = dispositionRegex.exec(dispositionContent)) !== null) {
                 dispositions.push({
                     title: 'Auditoría Legislativa - ' + 'Disposición Sintetizada - ' + titleMatch[0].trim(),
                     content: subsectionName + '\n' + dispositionContent
@@ -372,4 +376,33 @@ function processSynthesizedDisposition(sectionContent) {
     });
 
     return dispositions;
+}
+
+function processAgreements(sectionContent) {
+    const agreements = [];
+
+    const subsectionsRegex = /(TRIBUNAL DE CUENTAS\n)([\s\S]*?)(?=(?!\1)(TRIBUNAL DE CUENTAS\n|$))/gs;
+    const subsections = getSubsections(sectionContent, subsectionsRegex);
+
+    const agreementsGroupRegex = /(ACUERDO REGISTRADO BAJO EL N[º°] \d+\/\s?\d+\n)([\s\S]*?)(?=(?!\1)(ACUERDO REGISTRADO BAJO EL N[º°] \d+\/\s?\d+\n|$))/gs;
+    const agreementRegex = /ACUERDO REGISTRADO BAJO EL N[º°] \d+\/\s?\d+\n/gm;
+
+    subsections.forEach(subsection => {
+        const {subsectionName, subsectionContent} = subsection;
+        let match;
+        while ((match = agreementsGroupRegex.exec(subsectionContent)) !== null) {
+            let agreementContent = match[0].trim();
+            let titleMatch;
+
+            while ((titleMatch = agreementRegex.exec(agreementContent)) !== null) {
+                let title = titleMatch[0].trim().replace(/ REGISTRADO BAJO EL/g,'');
+                agreements.push({
+                    title: 'Auditoría Legislativa - ' + 'Acuerdo - ' + title,
+                    content: subsectionName + '\n' + agreementContent
+                });
+            }
+        }
+    });
+
+    return agreements;
 }
