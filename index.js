@@ -62,6 +62,8 @@ async function parsePDF(pdfBuffer) {
                 sectionName = 'DICTÁMENES';
             } else if (sectionName === 'DISPOSICION') {
                 sectionName = 'DISPOSICIÓN';
+            } else if (sectionName === 'REGISTRO DE\nPUBLICIDAD OFICIAL') {
+                sectionName = 'REGISTRO DE PUBLICIDAD OFICIAL';
             }
 
             sections.push({
@@ -153,6 +155,11 @@ async function parsePDF(pdfBuffer) {
                 case 'DISPOSICIONES':
                     const dispositions = processDispositions(sectionContent);
                     content.push(...dispositions);
+                    break;
+
+                case 'REGISTRO DE PUBLICIDAD OFICIAL':
+                    const officialAdvertising = processOfficialAdvertising(sectionContent);
+                    content.push(...officialAdvertising);
                     break;
             }
         })
@@ -520,4 +527,38 @@ function processDispositions(sectionContent) {
     });
 
     return dispositions;
+}
+
+function processOfficialAdvertising(sectionContent) {
+
+    const replacements = {
+        'SUBSECRETARÍA DE INFORMACIÓN PÚBLICA\nDIRECCIÓN GENERAL DE PUBLICIDAD\n': 'SUBSECRETARÍA DE INFORMACIÓN PÚBLICA DIRECCIÓN GENERAL DE PUBLICIDAD\n',
+    };
+    const normalizedContent = replaceSubsectionTitles(sectionContent, replacements);
+
+    const subsectionRegex = /(SUBSECRETAR[ÍI]A DE INFORMACI[OÓ]N P[UÚ]BLICA DIRECCI[OÓ]N GENERAL DE PUBLICIDAD\n)([\s\S]*?)(?=(?!\1)(SUBSECRETAR[ÍI]A DE INFORMACI[OÓ]N P[UÚ]BLICA DIRECCI[OÓ]N GENERAL DE PUBLICIDAD\n|$))/gs;
+    const subsections = getSubsections(normalizedContent, subsectionRegex);
+
+    const advertisingGroupRegex = /(REGISTRO N[º°] \d+\n)([\s\S]*?)(?=(?!\1)(REGISTRO N[º°] \d+\n|$))/gs;
+    const advertisingRegex = /REGISTRO N[º°] \d+/gs;
+
+    const officialAdvertising = [];
+
+    subsections.forEach(subsection => {
+        const {subsectionName, subsectionContent} = subsection;
+        let match;
+        while ((match = advertisingGroupRegex.exec(subsectionContent)) !== null) {
+            let advertisingContent = match[0].trim();
+            let titleMatch;
+
+            while ((titleMatch = advertisingRegex.exec(advertisingContent)) !== null) {
+                officialAdvertising.push({
+                    title: 'Auditoría Legislativa - ' + 'Registro de Publicidad Oficial - ' + titleMatch[0].trim(),
+                    content: subsectionName + '\n' + advertisingContent
+                });
+            }
+        }
+    });
+
+    return officialAdvertising;
 }
