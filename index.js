@@ -58,6 +58,8 @@ async function parsePDF(pdfBuffer) {
                 sectionName = 'RESOLUCIONES SINTETIZADAS';
             } else if (sectionName === 'DISPOSICION SINTETIZADA') {
                 sectionName = 'DISPOSICIÓN';
+            } else if (sectionName === 'DICTAMENES') {
+                sectionName = 'DICTÁMENES';
             }
 
             sections.push({
@@ -129,6 +131,11 @@ async function parsePDF(pdfBuffer) {
                 case 'ACUERDOS':
                     const agreements = processAgreements(sectionContent);
                     content.push(...agreements);
+                    break;
+
+                case 'DICTÁMENES':
+                    const dictamenes = processDictamenes(sectionContent);
+                    content.push(...dictamenes);
                     break;
             }
         })
@@ -405,4 +412,33 @@ function processAgreements(sectionContent) {
     });
 
     return agreements;
+}
+
+function processDictamenes(sectionContent) {
+    const dictamenes = [];
+
+    const subsectionsRegex = /(TRIBUNAL DE CUENTAS\n)([\s\S]*?)(?=(?!\1)(TRIBUNAL DE CUENTAS\n|$))/gs;
+    const subsections = getSubsections(sectionContent, subsectionsRegex);
+
+    const dictamenesGroupRegex = /(DICTAMEN DELTRIBUNAL N[º°] \d+\/\d+\n|DICTAMEN DEL TRIBUNAL N[º°] \d+\/\d+\n)([\s\S]*?)(?=(?!\1)(DICTAMEN DELTRIBUNAL N[º°] \d+\/\d+\n|DICTAMEN DEL TRIBUNAL N[º°] \d+\/\d+\n|$))/gs;
+    const dictamenRegex = /DICTAMEN DEL TRIBUNAL N[º°] \d+\/\d+\n|DICTAMEN DELTRIBUNAL N[º°] \d+\/\d+\n/gm;
+
+    subsections.forEach(subsection => {
+        const {subsectionName, subsectionContent} = subsection;
+        let match;
+        while ((match = dictamenesGroupRegex.exec(subsectionContent)) !== null) {
+            let dictamenContent = match[0].trim();
+            let titleMatch;
+
+            while ((titleMatch = dictamenRegex.exec(dictamenContent)) !== null) {
+                let title = titleMatch[0].trim().replace(/ DELTRIBUNAL| DEL TRIBUNAL/g, '');
+                dictamenes.push({
+                    title: 'Auditoría Legislativa - ' + 'Dictamen - ' + title,
+                    content: subsectionName + '\n' + dictamenContent
+                });
+            }
+        }
+    });
+
+    return dictamenes;
 }
