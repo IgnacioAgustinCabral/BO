@@ -8,14 +8,14 @@ module.exports = async function parseChubutPDF(pdfBuffer) {
 
         text = text.replace(/\s{2,}/g, ' ') //replace 2 or more space for 1 space
             .replace(/FRANQUEO A PAGAR\n(.*?)[Ss]ecci[óo]n [Oo]ficial/s, '') //eliminates this section
-            .replace(/FRANQUEO A PAGAR\n(.*?)[Ss]ecci[óo]n [Oo]ficial/s, '') //eliminates this section
             .replace(/([a-zA-ZáéíóúÁÉÍÓÚüÜñÑ])-\n([a-zA-ZáéíóúÁÉÍÓÚüÜñÑ])/g, "$1$2") //joins hyphenated words
             .replace(/BOLET[IÍ]N OFICIAL\n/g, '') //eliminates
             .replace(/P[AÁ]GINA (\d+)\n(Lunes|Martes|Mi[eé]rcoles|Jueves|Viernes|S[aá]bado|Domingo)\s\d{1,2}\sde\s(Enero|Febrero|Marzo|Abril|Mayo|Junio|Julio|Agosto|Septiembre|Octubre|Noviembre|Diciembre)\sde\s\d{4}\n/gs, '') //eliminates page number and date
             .replace(
                 /([^\n])\s*(LEY PROVINCIAL|LEYES PROVINCIALES|DECRETO PROVINCIAL|DECRETOS PROVINCIALES|DECRETO SINTETIZADO|DECRETOS SINTETIZADOS|RESOLUCIONES|RESOLUCI[ÓO]N|RESOLUCI[ÓO]NES SINTETIZADAS|RESOLUCI[ÓO]N SINTETIZADA|DISPOSICI[ÓO]N|DISPOSICIONES|ACUERDO|ACUERDOS|DICT[ÁA]MEN|DICT[ÁA]MENES|DISPOSICI[ÓO]N SINTETIZADA|DISPOSICIONES SINTETIZADAS|REGISTRO DE\nPUBLICIDAD OFICIAL|DECLARACIONES|DECLARACI[ÓO]N|Secci[óo]n General)/g,
                 (match, precedingText, sectionTitle) => `${precedingText}\n${sectionTitle}`)
-            .replace(/RESOLUCI[OÓ]N N[º°] \d+([\s\S]*?)$/gs, ''); //eliminates last section of the pdf
+            .replace(/RESOLUCIÓN N[º°] 171- EC- AÑO 2024([\s\S]*?)2.580,00\n?/gm, '')//eliminates last section of the pdf
+            .replace(/((I: \d+-\d+-\d+ V: \d+-\d+-\d+)|P: \d+-\d+-\d+ y \d+-\d+-\d+|P: \d+-\d+-\d+) ([^\n]+)\n/gm, '$1\n$3\n'); //formats;
 
         const sectionsRegex = /^(LEY PROVINCIAL\n|LEYES PROVINCIALES\n|DECRETO PROVINCIAL\n|DECRETOS PROVINCIALES\n|DECRETO SINTETIZADO\n|DECRETOS SINTETIZADOS\n|RESOLUCIONES\n|RESOLUCI[ÓO]N\n|RESOLUCI[ÓO]NES SINTETIZADAS\n|RESOLUCI[ÓO]N SINTETIZADA\n|DISPOSICI[ÓO]N\n|DISPOSICIONES\n|ACUERDO\n|ACUERDOS\n|DICT[ÁA]MEN\n|DICT[ÁA]MENES\n|DISPOSICI[ÓO]N SINTETIZADA\n|DISPOSICIONES SINTETIZADAS\n|REGISTRO DE\nPUBLICIDAD OFICIAL\n|DECLARACIONES\n|DECLARACI[ÓO]N\n)([\s\S]*?)(?=^(?!\1)^(LEY PROVINCIAL\n|LEYES PROVINCIALES\n|DECRETO PROVINCIAL\n|DECRETOS PROVINCIALES\n|DECRETO SINTETIZADO\n|DECRETOS SINTETIZADOS\n|RESOLUCIONES\n|RESOLUCI[ÓO]N\n|RESOLUCI[ÓO]NES SINTETIZADAS\n|RESOLUCI[ÓO]N SINTETIZADA\n|DISPOSICI[ÓO]N\n|DISPOSICIONES\n|ACUERDO\n|ACUERDOS\n|DICT[ÁA]MEN\n|DICT[ÁA]MENES\n|DISPOSICI[ÓO]N SINTETIZADA\n|DISPOSICIONES SINTETIZADAS\n|REGISTRO DE\nPUBLICIDAD OFICIAL\n|DECLARACIONES\n|DECLARACI[ÓO]N\n|Secci[óo]n General|$))|(Sección General\n)([\s\S]*)$/gm;
         const sections = [];
@@ -62,6 +62,7 @@ module.exports = async function parseChubutPDF(pdfBuffer) {
             'DISPOSICIÓN': processDispositions,
             'DISPOSICIONES': processDispositions,
             'REGISTRO DE PUBLICIDAD OFICIAL': processOfficialAdvertising,
+            'SECCIÓN GENERAL': processGeneralSection,
         };
 
         let content = [];
@@ -471,4 +472,19 @@ function processOfficialAdvertising(sectionContent) {
     });
 
     return officialAdvertising;
+}
+
+function processGeneralSection(sectionContent) {
+    fs.writeFileSync('general-section.txt', sectionContent);
+    const regex = /^([A-ZÁÉÍÓÚÜÑ1234567890\s?.,()<\–\-«»º°\/&]+\n|Carta de Intenci[óo]n)([\s\S]*?)(I:\s?\d{2}-\d{2}-\d{2}(?: V:\s?\d{2}-\d{2}-\d{2,4}|P: \d{2}-\d{2}-\d{2})| y \d{2}-\d{2}-\d{2}|P: \d{2}-\d{2}-\d{2})/gm;
+    const sections = [];
+
+    let match;
+    while ((match = regex.exec(sectionContent)) !== null) {
+        sections.push({
+            title: 'Auditoría Legislativa - ' + 'Sección General - ' + match[1].replace(/\n/g, ' ').trim(),
+            content: match[2].trim() + '\n' + match[3].trim()
+        });
+    }
+    return sections;
 }
