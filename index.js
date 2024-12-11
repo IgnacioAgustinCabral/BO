@@ -5,10 +5,15 @@ const port = 4000;
 const app = express();
 
 app.get('/process-bulletin', async (req, res) => {
-    const {url} = req.query;
+    const {url, sources_id} = req.query;
 
     const pdfBuffer = await downloadPDF(url);
-    const data = await parseChubutPDF(pdfBuffer);
+    let data;
+    if (sources_id === '597') {
+        data = await parseChubutPDF(pdfBuffer);
+    } else {
+        data = {error: 'No parser for this source'};
+    }
 
     res.json(data);
 });

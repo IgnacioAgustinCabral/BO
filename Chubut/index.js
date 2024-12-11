@@ -14,129 +14,65 @@ module.exports = async function parseChubutPDF(pdfBuffer) {
             .replace(/P[AÁ]GINA (\d+)\n(Lunes|Martes|Mi[eé]rcoles|Jueves|Viernes|S[aá]bado|Domingo)\s\d{1,2}\sde\s(Enero|Febrero|Marzo|Abril|Mayo|Junio|Julio|Agosto|Septiembre|Octubre|Noviembre|Diciembre)\sde\s\d{4}\n/gs, '') //eliminates page number and date
             .replace(
                 /([^\n])\s*(LEY PROVINCIAL|LEYES PROVINCIALES|DECRETO PROVINCIAL|DECRETOS PROVINCIALES|DECRETO SINTETIZADO|DECRETOS SINTETIZADOS|RESOLUCIONES|RESOLUCI[ÓO]N|RESOLUCI[ÓO]NES SINTETIZADAS|RESOLUCI[ÓO]N SINTETIZADA|DISPOSICI[ÓO]N|DISPOSICIONES|ACUERDO|ACUERDOS|DICT[ÁA]MEN|DICT[ÁA]MENES|DISPOSICI[ÓO]N SINTETIZADA|DISPOSICIONES SINTETIZADAS|REGISTRO DE\nPUBLICIDAD OFICIAL|DECLARACIONES|DECLARACI[ÓO]N|Secci[óo]n General)/g,
-                (match, precedingText, sectionTitle) => `${precedingText}\n${sectionTitle}`);
+                (match, precedingText, sectionTitle) => `${precedingText}\n${sectionTitle}`)
+            .replace(/RESOLUCI[OÓ]N N[º°] \d+([\s\S]*?)$/gs, ''); //eliminates last section of the pdf
 
-        const sectionsRegex = /^(LEY PROVINCIAL\n|LEYES PROVINCIALES\n|DECRETO PROVINCIAL\n|DECRETOS PROVINCIALES\n|DECRETO SINTETIZADO\n|DECRETOS SINTETIZADOS\n|RESOLUCIONES\n|RESOLUCI[ÓO]N\n|RESOLUCI[ÓO]NES SINTETIZADAS\n|RESOLUCI[ÓO]N SINTETIZADA\n|DISPOSICI[ÓO]N\n|DISPOSICIONES\n|ACUERDO\n|ACUERDOS\n|DICT[ÁA]MEN\n|DICT[ÁA]MENES\n|DISPOSICI[ÓO]N SINTETIZADA\n|DISPOSICIONES SINTETIZADAS\n|REGISTRO DE\nPUBLICIDAD OFICIAL\n|DECLARACIONES\n|DECLARACI[ÓO]N\n)([\s\S]*?)(?=^(?!\1)^(LEY PROVINCIAL\n|LEYES PROVINCIALES\n|DECRETO PROVINCIAL\n|DECRETOS PROVINCIALES\n|DECRETO SINTETIZADO\n|DECRETOS SINTETIZADOS\n|RESOLUCIONES\n|RESOLUCI[ÓO]N\n|RESOLUCI[ÓO]NES SINTETIZADAS\n|RESOLUCI[ÓO]N SINTETIZADA\n|DISPOSICI[ÓO]N\n|DISPOSICIONES\n|ACUERDO\n|ACUERDOS\n|DICT[ÁA]MEN\n|DICT[ÁA]MENES\n|DISPOSICI[ÓO]N SINTETIZADA\n|DISPOSICIONES SINTETIZADAS\n|REGISTRO DE\nPUBLICIDAD OFICIAL\n|DECLARACIONES\n|DECLARACI[ÓO]N\n|Secci[óo]n General|$))/gm;
+        const sectionsRegex = /^(LEY PROVINCIAL\n|LEYES PROVINCIALES\n|DECRETO PROVINCIAL\n|DECRETOS PROVINCIALES\n|DECRETO SINTETIZADO\n|DECRETOS SINTETIZADOS\n|RESOLUCIONES\n|RESOLUCI[ÓO]N\n|RESOLUCI[ÓO]NES SINTETIZADAS\n|RESOLUCI[ÓO]N SINTETIZADA\n|DISPOSICI[ÓO]N\n|DISPOSICIONES\n|ACUERDO\n|ACUERDOS\n|DICT[ÁA]MEN\n|DICT[ÁA]MENES\n|DISPOSICI[ÓO]N SINTETIZADA\n|DISPOSICIONES SINTETIZADAS\n|REGISTRO DE\nPUBLICIDAD OFICIAL\n|DECLARACIONES\n|DECLARACI[ÓO]N\n)([\s\S]*?)(?=^(?!\1)^(LEY PROVINCIAL\n|LEYES PROVINCIALES\n|DECRETO PROVINCIAL\n|DECRETOS PROVINCIALES\n|DECRETO SINTETIZADO\n|DECRETOS SINTETIZADOS\n|RESOLUCIONES\n|RESOLUCI[ÓO]N\n|RESOLUCI[ÓO]NES SINTETIZADAS\n|RESOLUCI[ÓO]N SINTETIZADA\n|DISPOSICI[ÓO]N\n|DISPOSICIONES\n|ACUERDO\n|ACUERDOS\n|DICT[ÁA]MEN\n|DICT[ÁA]MENES\n|DISPOSICI[ÓO]N SINTETIZADA\n|DISPOSICIONES SINTETIZADAS\n|REGISTRO DE\nPUBLICIDAD OFICIAL\n|DECLARACIONES\n|DECLARACI[ÓO]N\n|Secci[óo]n General|$))|(Sección General\n)([\s\S]*)$/gm;
         const sections = [];
         let match;
 
-        while ((match = sectionsRegex.exec(text)) !== null) {
-            let sectionName = match[1].trim();
-            let sectionContent = match[2].trim();
+        const sectionNameMap = {
+            'RESOLUCION': 'RESOLUCIÓN',
+            'RESOLUCION SINTETIZADA': 'RESOLUCIÓN SINTETIZADA',
+            'RESOLUCIÓNES SINTETIZADAS': 'RESOLUCIONES SINTETIZADAS',
+            'DISPOSICION SINTETIZADA': 'DISPOSICIÓN',
+            'DICTAMENES': 'DICTÁMENES',
+            'DISPOSICION': 'DISPOSICIÓN',
+            'REGISTRO DE\nPUBLICIDAD OFICIAL': 'REGISTRO DE PUBLICIDAD OFICIAL',
+            'Sección General': 'SECCIÓN GENERAL',
+        };
 
-            if (sectionName === 'RESOLUCION') {
-                sectionName = 'RESOLUCIÓN';
-            } else if (sectionName === 'RESOLUCION SINTETIZADA') {
-                sectionName = 'RESOLUCIÓN SINTETIZADA';
-            } else if (sectionName === 'RESOLUCIÓNES SINTETIZADAS') {
-                sectionName = 'RESOLUCIONES SINTETIZADAS';
-            } else if (sectionName === 'DISPOSICION SINTETIZADA') {
-                sectionName = 'DISPOSICIÓN';
-            } else if (sectionName === 'DICTAMENES') {
-                sectionName = 'DICTÁMENES';
-            } else if (sectionName === 'DISPOSICION') {
-                sectionName = 'DISPOSICIÓN';
-            } else if (sectionName === 'REGISTRO DE\nPUBLICIDAD OFICIAL') {
-                sectionName = 'REGISTRO DE PUBLICIDAD OFICIAL';
-            }
+        while ((match = sectionsRegex.exec(text)) !== null) {
+            const sectionName = match[1]?.trim() || match[4]?.trim();
+            const sectionContent = match[2]?.trim() || match[5]?.trim();
+
+            const normalizedSectionName = sectionNameMap[sectionName] || sectionName;
 
             sections.push({
-                sectionName,
+                sectionName: normalizedSectionName,
                 sectionContent
             });
         }
 
+        const sectionProcessors = {
+            'LEY PROVINCIAL': processProvincialLaws,
+            'LEYES PROVINCIALES': processProvincialLaws,
+            'DECRETO PROVINCIAL': processProvincialDecrees,
+            'DECRETOS PROVINCIALES': processProvincialDecrees,
+            'DECRETO SINTETIZADO': processSynthesizedDecrees,
+            'DECRETOS SINTETIZADOS': processSynthesizedDecrees,
+            'RESOLUCIÓN': processResolutions,
+            'RESOLUCIONES': processResolutions,
+            'RESOLUCIÓN SINTETIZADA': processSynthesizedResolutions,
+            'RESOLUCIONES SINTETIZADAS': processSynthesizedResolutions,
+            'DISPOSICIÓN SINTETIZADA': processSynthesizedDisposition,
+            'ACUERDOS': processAgreements,
+            'DICTÁMENES': processDictamenes,
+            'DECLARACIONES': processDeclarations,
+            'DISPOSICIÓN': processDispositions,
+            'DISPOSICIONES': processDispositions,
+            'REGISTRO DE PUBLICIDAD OFICIAL': processOfficialAdvertising,
+        };
+
         let content = [];
 
-        sections.forEach(section => {
-            const {sectionName, sectionContent} = section;
-            switch (sectionName) {
-                case 'LEY PROVINCIAL':
-                    const provincialLaw = processProvincialLaws(sectionContent);
-                    content.push(...provincialLaw);
-                    break;
-
-                case 'LEYES PROVINCIALES':
-                    const provincialLaws = processProvincialLaws(sectionContent);
-                    content.push(...provincialLaws);
-                    break;
-
-                case 'DECRETO PROVINCIAL':
-                    const decree = processProvincialDecrees(sectionContent);
-                    content.push(...decree);
-                    break;
-
-                case 'DECRETOS PROVINCIALES':
-                    const decrees = processProvincialDecrees(sectionContent);
-                    content.push(...decrees);
-                    break;
-
-                case 'DECRETO SINTETIZADO':
-                    const synthesizedDecree = processSynthesizedDecrees(sectionContent);
-                    content.push(...synthesizedDecree);
-                    break;
-
-                case 'DECRETOS SINTETIZADOS':
-                    const synthesizedDecrees = processSynthesizedDecrees(sectionContent);
-                    content.push(...synthesizedDecrees);
-                    break;
-
-                case 'RESOLUCIÓN':
-                    const resolution = processResolutions(sectionContent);
-                    content.push(...resolution);
-                    break;
-
-                case 'RESOLUCIONES':
-                    const resolutions = processResolutions(sectionContent);
-                    content.push(...resolutions);
-                    break;
-
-                case 'RESOLUCIÓN SINTETIZADA':
-                    const synthesizedResolution = processSynthesizedResolutions(sectionContent);
-                    content.push(...synthesizedResolution);
-                    break;
-
-                case 'RESOLUCIONES SINTETIZADAS':
-                    const synthesizedResolutions = processSynthesizedResolutions(sectionContent);
-                    content.push(...synthesizedResolutions);
-                    break;
-
-                case 'DISPOSICIÓN SINTETIZADA':
-                    const synthesizedDisposition = processSynthesizedDisposition(sectionContent);
-                    content.push(...synthesizedDisposition);
-                    break;
-
-                case 'ACUERDOS':
-                    const agreements = processAgreements(sectionContent);
-                    content.push(...agreements);
-                    break;
-
-                case 'DICTÁMENES':
-                    const dictamenes = processDictamenes(sectionContent);
-                    content.push(...dictamenes);
-                    break;
-
-                case 'DECLARACIONES':
-                    const declarations = processDeclarations(sectionContent);
-                    content.push(...declarations);
-                    break;
-
-                case 'DISPOSICIÓN':
-                    const disposition = processDispositions(sectionContent);
-                    content.push(...disposition);
-                    break;
-
-                case 'DISPOSICIONES':
-                    const dispositions = processDispositions(sectionContent);
-                    content.push(...dispositions);
-                    break;
-
-                case 'REGISTRO DE PUBLICIDAD OFICIAL':
-                    const officialAdvertising = processOfficialAdvertising(sectionContent);
-                    content.push(...officialAdvertising);
-                    break;
+        sections.forEach(({sectionName, sectionContent}) => {
+            const processor = sectionProcessors[sectionName];
+            if (processor) {
+                content.push(...processor(sectionContent));
             }
-        })
+        });
+
         return content;
     } catch (error) {
         console.error("Error al procesar el PDF:", error);
