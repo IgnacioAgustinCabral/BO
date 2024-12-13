@@ -1,6 +1,7 @@
 const axios = require('axios');
 const express = require('express');
 const parseChubutPDF = require('./Chubut/index.js');
+const parseSantaCruzPDF = require('./SantaCruz/index.js');
 const port = 4000;
 const app = express();
 
@@ -9,8 +10,10 @@ app.get('/process-bulletin', async (req, res) => {
 
     const pdfBuffer = await downloadPDF(url);
     let data;
-    if (sources_id === '597') {
+    if (sources_id === '621') {
         data = await parseChubutPDF(pdfBuffer);
+    } else if (sources_id === '620') {
+        data = await parseSantaCruzPDF(pdfBuffer);
     } else {
         data = {error: 'No parser for this source'};
     }
