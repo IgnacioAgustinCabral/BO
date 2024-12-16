@@ -12,7 +12,7 @@ module.exports = async function parseSantaCruzPDF(pdfBuffer) {
             .replace(/([a-zA-ZáéíóúÁÉÍÓÚüÜñÑ])-\n([a-zA-ZáéíóúÁÉÍÓÚüÜñÑ])/g, '$1$2') // joins words separated by a hyphen
             .replace(/\s*\n/g, '\n'); //replaces multiple spaces and line brake for one line break
 
-        const sectionRegex = /^(LEYES\n|DECRETOS\n|DECRETOS SINTETIZADOS\n|RESOLUCI[OÓ]N(?:ES)?(?: [A-Za-zÁÉÍÓÚ.-]+)*\n|DECLARACI[OÓ]N(?:ES)?(?: [A-Za-zÁÉÍÓÚ.-]+)*\n|DISPOSICI[OÓ]N(?:ES)?(?: [A-Za-zÁÉÍÓÚ.-]+)*\n|EDICTOS\n|AVISOS?\n|LICITACIONES\n|CONVOCATORIAS\n)((?:(?!^(LEYES\n|DECRETOS\n|DECRETOS SINTETIZADOS\n|RESOLUCI[OÓ]N(?:ES)?(?: [A-Za-zÁÉÍÓÚ.-]+)*\n|DECLARACI[OÓ]N(?:ES)?(?: [A-Za-zÁÉÍÓÚ.-]+)*\n|DISPOSICI[OÓ]N(?:ES)?(?: [A-Za-zÁÉÍÓÚ.-]+)*\n|EDICTOS\n|AVISOS?\n|LICITACIONES\n|CONVOCATORIAS\n)).|\n)+)/gms;
+        const sectionRegex = /^(LEYES\n|DECRETOS\n|DECRETOS SINTETIZADOS\n|RESOLUCI[OÓ]N(?:ES)?(?: [A-Za-zÁÉÍÓÚ.-]+)*\n|DECLARACI[OÓ]N(?:ES)?(?: [A-Za-zÁÉÍÓÚ.-]+)*\n|DISPOSICI[OÓ]N(?:ES)?(?: [A-Za-zÁÉÍÓÚ.-]+)*\n|EDICTOS\n|AVISOS?\n|LICITACIONES\n|CONVOCATORIAS\n|DEUDORES ALIMENTARIOS\n|C[EÉ]DULAS DE NOTIFICACIONES\n)((?:(?!^(LEYES\n|DECRETOS\n|DECRETOS SINTETIZADOS\n|RESOLUCI[OÓ]N(?:ES)?(?: [A-Za-zÁÉÍÓÚ.-]+)*\n|DECLARACI[OÓ]N(?:ES)?(?: [A-Za-zÁÉÍÓÚ.-]+)*\n|DISPOSICI[OÓ]N(?:ES)?(?: [A-Za-zÁÉÍÓÚ.-]+)*\n|EDICTOS\n|AVISOS?\n|LICITACIONES\n|CONVOCATORIAS\n|DEUDORES ALIMENTARIOS\n|C[EÉ]DULAS DE NOTIFICACIONES\n)).|\n)+)/gms;
 
         const sections = [];
 
@@ -33,7 +33,8 @@ module.exports = async function parseSantaCruzPDF(pdfBuffer) {
             'RESOLUCIONES': processResolutions,
             'DISPOSICIONES': processDispositions,
             'EDICTOS': processEdicts,
-            'AVISOS': processAvisos
+            'AVISOS': processAvisos,
+            'CONVOCATORIAS': processCalls,
         };
 
         let content = [];
@@ -245,4 +246,39 @@ function processAvisos(sectionName, content) {
 
     return avisos;
 
+}
+
+function processCalls(sectionName, content) {
+    content = content.replace(/__+\n/g, '');//strip underscores
+    fs.writeFileSync('content.txt', content);
+    const regex1 = /(^CONVOCATORIA\n^“[A-ZÁÉÍÓÚÑ\.\s]+”\n|^CONVOCATORIA [A-ZÁÉÍÓÚÑ\.\s]+\n^“[A-ZÁÉÍÓÚÑ\.\s]+”\n)([\s\S]*?)(?=(^CONVOCATORIA\n|^CONVOCATORIA [A-ZÁÉÍÓÚÑ\.\s]+\n^“[A-ZÁÉÍÓÚÑ\.\s]+”\n))/gm;
+    let match;
+    const calls = [];
+
+    while ((match = regex1.exec(content)) !== null) {
+        let title = match[1].replace('\n', ' ').trim();
+        const call = {
+            title: 'Auditoría Legislativa - ' + `${sectionName} - ` + title,
+            content: match[2].trim(),
+        };
+
+        calls.push(call);
+    }
+
+    content = content.replace(regex1, '');
+
+    const regex2 = /(^CONVOCATORIA\n^“[A-ZÁÉÍÓÚÑ\.\s]+”\n|^CONVOCATORIA [A-ZÁÉÍÓÚÑ\.\s]+\n^“[A-ZÁÉÍÓÚÑ\.\s]+”\n)([\s\S]*)/gm;
+
+    const lastCall = regex2.exec(content);
+
+    if (lastCall) {
+        let title = lastCall[1].replace('\n', ' ').trim();
+        const call = {
+            title: 'Auditoría Legislativa - ' + `${sectionName} - ` + title,
+            content: lastCall[2].trim(),
+        };
+        calls.push(call);
+    }
+
+    return calls;
 }
