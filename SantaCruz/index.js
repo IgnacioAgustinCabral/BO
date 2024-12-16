@@ -32,6 +32,7 @@ module.exports = async function parseSantaCruzPDF(pdfBuffer) {
             'DECRETOS SINTETIZADOS': processSynthesizedDecrees,
             'RESOLUCIONES': processResolutions,
             'DISPOSICIONES': processDispositions,
+            'EDICTOS': processEdicts
         };
 
         let content = [];
@@ -176,4 +177,37 @@ function processDispositions(sectionName, content) {
         dispositions.push(disposition);
     }
     return dispositions;
+}
+
+function processEdicts(sectionName, content) {
+    content = content.replace(/__+\n/g, '')//strip underscores
+        .replace(/E D I C T O\n/g, 'EDICTO\n'); // standardize
+
+    const regex1 = /(^\s?EDICTO(?: JUDICIAL(?: N[º°] \d{1,4}\/\d{4})?| N[º°] \d{1,4}\/\d{4})?)\n([\s\S]*?)(?=(^\s?EDICTO(?: JUDICIAL(?: N[º°] \d{1,4}\/\d{4})?| N[º°] \d{1,4}\/\d{4})?)\n|$)/gm;
+    let match;
+    const edicts = [];
+
+    while ((match = regex1.exec(content)) !== null) {
+        const edict = {
+            title: 'Auditoría Legislativa - ' + 'EDICTOS - ' + match[1].trim(),
+            content: match[2].trim(),
+        };
+
+        edicts.push(edict);
+    }
+
+    content = content.replace(regex1, '');
+
+    const regex2 = /(^\s?EDICTO(?: JUDICIAL(?: N[º°] \d{1,4}\/\d{4})?| N[º°] \d{1,4}\/\d{4})?)\n([\s\S]*)/gm;
+    const lastEdict = regex2.exec(content);
+
+    if (lastEdict) {
+        const edict = {
+            title: 'Auditoría Legislativa - ' + `${sectionName} - ` + lastEdict[1].trim(),
+            content: lastEdict[2].trim(),
+        };
+        edicts.push(edict);
+    }
+
+    return edicts;
 }
