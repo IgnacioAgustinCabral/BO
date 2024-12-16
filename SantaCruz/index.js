@@ -29,6 +29,7 @@ module.exports = async function parseSantaCruzPDF(pdfBuffer) {
 
         const sectionProcessors = {
             'LEYES': processLaws,
+            'DECRETOS SINTETIZADOS': processSynthesizedDecrees,
         };
 
         let content = [];
@@ -75,4 +76,35 @@ function processLaws(content) {
     }
 
     return laws;
+}
+
+function processSynthesizedDecrees(content){
+    content = content.replace(/__+\n/g, ''); //strip underscores
+    const regex1 = /(^DECRETO N[º°] \d+\n)([\s\S]*?)(?=(^DECRETO N[º°] \d+\n))/gm
+    let match;
+    const decrees = [];
+
+    while ((match = regex1.exec(content)) !== null){
+        const decree = {
+            title: 'Auditoría Legislativa - ' + 'DECRETOS SINTETIZADOS - ' + match[1].trim(),
+            content: match[2].trim(),
+        };
+
+        decrees.push(decree);
+    }
+
+    content = content.replace(regex1, '');
+
+    const regex2 = /(^DECRETO N[º°] \d+\n)([\s\S]*)/gm
+    const lastDecree = regex2.exec(content);
+
+    if (lastDecree){
+        const decree = {
+            title: 'Auditoría Legislativa - ' + 'DECRETOS SINTETIZADOS - ' + lastDecree[1].trim(),
+            content: lastDecree[2].trim(),
+        };
+        decrees.push(decree);
+    }
+
+    return decrees;
 }
