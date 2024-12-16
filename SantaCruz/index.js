@@ -30,13 +30,18 @@ module.exports = async function parseSantaCruzPDF(pdfBuffer) {
         const sectionProcessors = {
             'LEYES': processLaws,
             'DECRETOS SINTETIZADOS': processSynthesizedDecrees,
+            'RESOLUCIONES': processResolutions,
         };
 
         let content = [];
         sections.forEach(({sectionName, sectionContent}) => {
+            const originalSectionName = sectionName;
+            if (/RESOLUCI[ÓO]N|RESOLUCI[ÓO]NES/.test(sectionName)) {
+                sectionName = 'RESOLUCIONES';  // group all resolutions under the same section name
+            }
             const processor = sectionProcessors[sectionName];
             if (processor) {
-                content.push(...processor(sectionContent));
+                content.push(...processor(originalSectionName, sectionContent));
             }
         });
 
@@ -47,7 +52,7 @@ module.exports = async function parseSantaCruzPDF(pdfBuffer) {
     }
 }
 
-function processLaws(content) {
+function processLaws(sectionName,content) {
     content = content.replace(/__+\n/g, ''); //strip underscores
     const regex1 = /(^LEY N[º°] \d+\n)([\s\S]*?)(?=(^LEY N[º°] \d+\n))/gm;
     let match;
@@ -69,7 +74,7 @@ function processLaws(content) {
 
     if (lastLaw) {
         const law = {
-            title: 'Auditoría Legislativa - ' + 'LEYES - ' + lastLaw[1].trim(),
+            title: 'Auditoría Legislativa - ' + `${sectionName} - ` + lastLaw[1].trim(),
             content: lastLaw[2].trim(),
         };
         laws.push(law);
@@ -78,15 +83,15 @@ function processLaws(content) {
     return laws;
 }
 
-function processSynthesizedDecrees(content){
+function processSynthesizedDecrees(sectionName,content) {
     content = content.replace(/__+\n/g, ''); //strip underscores
     const regex1 = /(^DECRETO N[º°] \d+\n)([\s\S]*?)(?=(^DECRETO N[º°] \d+\n))/gm
     let match;
     const decrees = [];
 
-    while ((match = regex1.exec(content)) !== null){
+    while ((match = regex1.exec(content)) !== null) {
         const decree = {
-            title: 'Auditoría Legislativa - ' + 'DECRETOS SINTETIZADOS - ' + match[1].trim(),
+            title: 'Auditoría Legislativa - ' +`${sectionName} - ` + match[1].trim(),
             content: match[2].trim(),
         };
 
@@ -98,7 +103,7 @@ function processSynthesizedDecrees(content){
     const regex2 = /(^DECRETO N[º°] \d+\n)([\s\S]*)/gm
     const lastDecree = regex2.exec(content);
 
-    if (lastDecree){
+    if (lastDecree) {
         const decree = {
             title: 'Auditoría Legislativa - ' + 'DECRETOS SINTETIZADOS - ' + lastDecree[1].trim(),
             content: lastDecree[2].trim(),
@@ -107,4 +112,35 @@ function processSynthesizedDecrees(content){
     }
 
     return decrees;
+}
+
+function processResolutions(sectionName, content) {
+    content = content.replace(/__+\n/g, ''); //strip underscores
+    const regex1 = /(^RESOLUCI[ÓO]N N[º°] \d+\n)([\s\S]*?)(?=(^RESOLUCI[ÓO]N N[º°] \d+\n))/gm
+    let match;
+    const resolutions = [];
+
+    while ((match = regex1.exec(content)) !== null) {
+        const resolution = {
+            title: 'Auditoría Legislativa - ' + 'RESOLUCIONES - ' + match[1].trim(),
+            content: match[2].trim(),
+        };
+
+        resolutions.push(resolution);
+    }
+
+    content = content.replace(regex1, '');
+
+    const regex2 = /(^RESOLUCI[ÓO]N N[º°] \d+\n)([\s\S]*)/gm
+    const lastResolution = regex2.exec(content);
+
+    if (lastResolution) {
+        const resolution = {
+            title: 'Auditoría Legislativa - ' + `${sectionName} - ` + lastResolution[1].trim(),
+            content: lastResolution[2].trim(),
+        };
+        resolutions.push(resolution);
+    }
+
+    return resolutions;
 }
