@@ -32,7 +32,8 @@ module.exports = async function parseSantaCruzPDF(pdfBuffer) {
             'DECRETOS SINTETIZADOS': processSynthesizedDecrees,
             'RESOLUCIONES': processResolutions,
             'DISPOSICIONES': processDispositions,
-            'EDICTOS': processEdicts
+            'EDICTOS': processEdicts,
+            'AVISOS': processAvisos
         };
 
         let content = [];
@@ -210,4 +211,38 @@ function processEdicts(sectionName, content) {
     }
 
     return edicts;
+}
+
+function processAvisos(sectionName, content) {
+    content = content.replace(/__+\n/g, '')//strip underscores
+        .replace(/A V I S O\n/g, 'AVISO\n'); // standardize
+
+    const regex1 = /(^AVISO\n|^AVISO [A-ZÁÉÍÓÚ\.\s]+\n^“[A-ZÁÉÍÓÚ\.\s]+”\n)([\s\S]*?)(?=(^AVISO\n|^AVISO [A-ZÁÉÍÓÚ\.\s]+\n^“[A-ZÁÉÍÓÚ\.\s]+”\n))/gm;
+    let match;
+    const avisos = [];
+
+    while ((match = regex1.exec(content)) !== null) {
+        const aviso = {
+            title: 'Auditoría Legislativa - ' + `${sectionName} - ` + match[1].trim(),
+            content: match[2].trim(),
+        };
+
+        avisos.push(aviso);
+    }
+
+    content = content.replace(regex1, '');
+
+    const regex2 = /(^AVISO\n|^AVISO [A-ZÁÉÍÓÚ\.\s]+\n^“[A-ZÁÉÍÓÚ\.\s]+”\n)([\s\S]*)/gm;
+    const lastAviso = regex2.exec(content);
+
+    if (lastAviso) {
+        const aviso = {
+            title: 'Auditoría Legislativa - ' + `${sectionName} - ` + lastAviso[1].trim(),
+            content: lastAviso[2].trim(),
+        };
+        avisos.push(aviso);
+    }
+
+    return avisos;
+
 }
