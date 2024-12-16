@@ -14,18 +14,65 @@ module.exports = async function parseSantaCruzPDF(pdfBuffer) {
 
         const sectionRegex = /^(LEYES\n|DECRETOS\n|DECRETOS SINTETIZADOS\n|RESOLUCI[OÓ]N(?:ES)?(?: [A-Za-zÁÉÍÓÚ.-]+)*\n|DECLARACI[OÓ]N(?:ES)?(?: [A-Za-zÁÉÍÓÚ.-]+)*\n|DISPOSICI[OÓ]N(?:ES)?(?: [A-Za-zÁÉÍÓÚ.-]+)*\n|EDICTOS\n|AVISOS?\n|LICITACIONES\n|CONVOCATORIAS\n)((?:(?!^(LEYES\n|DECRETOS\n|DECRETOS SINTETIZADOS\n|RESOLUCI[OÓ]N(?:ES)?(?: [A-Za-zÁÉÍÓÚ.-]+)*\n|DECLARACI[OÓ]N(?:ES)?(?: [A-Za-zÁÉÍÓÚ.-]+)*\n|DISPOSICI[OÓ]N(?:ES)?(?: [A-Za-zÁÉÍÓÚ.-]+)*\n|EDICTOS\n|AVISOS?\n|LICITACIONES\n|CONVOCATORIAS\n)).|\n)+)/gms;
 
-        const sections = {};
+        const sections = [];
 
         let match;
 
         while ((match = sectionRegex.exec(text)) !== null) {
             const sectionName = match[1].trim();
             const sectionContent = match[2].trim();
-            sections[sectionName] = sectionContent;
+            sections.push({
+                sectionName: sectionName,
+                sectionContent: sectionContent
+            });
         }
-        return sections;
+
+        const sectionProcessors = {
+            'LEYES': processLaws,
+        };
+
+        let content = [];
+        sections.forEach(({sectionName, sectionContent}) => {
+            const processor = sectionProcessors[sectionName];
+            if (processor) {
+                content.push(...processor(sectionContent));
+            }
+        });
+
+        return content;
     } catch (error) {
         console.error("Error al procesar el PDF:", error);
         return [];
     }
+}
+
+function processLaws(content) {
+    content = content.replace(/__+\n/g, ''); //strip underscores
+    const regex1 = /(^LEY N[º°] \d+\n)([\s\S]*?)(?=(^LEY N[º°] \d+\n))/gm;
+    let match;
+    const laws = [];
+
+    while ((match = regex1.exec(content)) !== null) {
+        const law = {
+            title: 'Auditoría Legislativa - ' + 'LEYES - ' + match[1].trim(),
+            content: match[2].trim(),
+        };
+
+        laws.push(law);
+    }
+
+    content = content.replace(regex1, '');
+
+    const regex2 = /(^LEY N[º°] \d+\n)([\s\S]*)/gm;
+    const lastLaw = regex2.exec(content);
+
+    if (lastLaw) {
+        const law = {
+            title: 'Auditoría Legislativa - ' + 'LEYES - ' + lastLaw[1].trim(),
+            content: lastLaw[2].trim(),
+        };
+        laws.push(law);
+    }
+
+    return laws;
 }
