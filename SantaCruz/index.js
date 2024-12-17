@@ -128,7 +128,7 @@ function processResolutions(sectionName, content) {
 
     while ((match = regex1.exec(content)) !== null) {
         const resolution = {
-            title: 'Auditoría Legislativa - ' + 'RESOLUCIONES - ' + match[1].trim(),
+            title: 'Auditoría Legislativa - ' + `${sectionName} - ` + match[1].trim(),
             content: match[2].trim(),
         };
 
@@ -159,7 +159,7 @@ function processDispositions(sectionName, content) {
 
     while ((match = regex1.exec(content)) !== null) {
         const disposition = {
-            title: 'Auditoría Legislativa - ' + 'DISPOSICIONES - ' + match[1].trim(),
+            title: 'Auditoría Legislativa - ' + `${sectionName} - ` + match[1].trim(),
             content: match[2].trim(),
         };
 
@@ -183,15 +183,16 @@ function processDispositions(sectionName, content) {
 
 function processEdicts(sectionName, content) {
     content = content.replace(/__+\n/g, '')//strip underscores
-        .replace(/E D I C T O\n/g, 'EDICTO\n'); // standardize
+        .replace(/E D I C T O\n/g, 'EDICTO\n') // standardize
+        .replace(/A V I S O\n/g, 'AVISO\n');
 
-    const regex1 = /(^\s?EDICTO(?: JUDICIAL(?: N[º°] \d{1,4}\/\d{4})?| N[º°] \d{1,4}\/\d{4})?)\n([\s\S]*?)(?=(^\s?EDICTO(?: JUDICIAL(?: N[º°] \d{1,4}\/\d{4})?| N[º°] \d{1,4}\/\d{4})?)\n|$)/gm;
+    const regex1 = /(^\s?EDICTO(?: JUDICIAL(?: N[º°] \d{1,4}\/\d{4})?| N[º°] \d{1,4}\/\d{4}| N[º°] \d+| N[º°]\/\d+| N[º°] \d+\/\d+)?\n|^AVISO DE LEY\n|^AVISO\n^“[A-ZÁÉÍÓÚ\.\s]+”\n|^AVISO\n)([\s\S]*?)(?=(^\s?EDICTO(?: JUDICIAL(?: N[º°] \d{1,4}\/\d{4})?| N[º°] \d{1,4}\/\d{4}| N[º°] \d+| N[º°]\/\d+| N[º°] \d+\/\d+)?\n|^AVISO DE LEY\n|^AVISO\n^“[A-ZÁÉÍÓÚ\.\s]+”\n|^AVISO\n))/gm;
     let match;
     const edicts = [];
 
     while ((match = regex1.exec(content)) !== null) {
         const edict = {
-            title: 'Auditoría Legislativa - ' + 'EDICTOS - ' + match[1].trim(),
+            title: 'Auditoría Legislativa - ' + 'EDICTOS - ' + match[1].replace(/\n/,' ').trim(),
             content: match[2].trim(),
         };
 
@@ -200,12 +201,12 @@ function processEdicts(sectionName, content) {
 
     content = content.replace(regex1, '');
 
-    const regex2 = /(^\s?EDICTO(?: JUDICIAL(?: N[º°] \d{1,4}\/\d{4})?| N[º°] \d{1,4}\/\d{4})?)\n([\s\S]*)/gm;
+    const regex2 = /(^\s?EDICTO(?: JUDICIAL(?: N[º°] \d{1,4}\/\d{4})?| N[º°] \d{1,4}\/\d{4}| N[º°] \d+| N[º°]\/\d+| N[º°] \d+\/\d+)?\n|^AVISO DE LEY\n|^AVISO\n^“[A-ZÁÉÍÓÚ\.\s]+”\n|^AVISO\n)([\s\S]*)/gm;
     const lastEdict = regex2.exec(content);
 
     if (lastEdict) {
         const edict = {
-            title: 'Auditoría Legislativa - ' + `${sectionName} - ` + lastEdict[1].trim(),
+            title: 'Auditoría Legislativa - ' + `${sectionName} - ` + lastEdict[1].replace(/\n/,' ').trim(),
             content: lastEdict[2].trim(),
         };
         edicts.push(edict);
@@ -216,15 +217,17 @@ function processEdicts(sectionName, content) {
 
 function processAvisos(sectionName, content) {
     content = content.replace(/__+\n/g, '')//strip underscores
-        .replace(/A V I S O\n/g, 'AVISO\n'); // standardize
+        .replace(/A V I S O\n/g, 'AVISO\n')
+        .replace(/^Provincia de Santa Cruz\nMinisterio de Salud y Ambiente\nSecretar[ií]a de Estado de Ambiente/gm, 'Provincia de Santa Cruz - Ministerio de Salud y Ambiente - Secretaría de Estado de Ambiente')
+        .replace(/^Ministerio de Energ[ií]a y Miner[ií]a\nSecretar[ií]a de Recursos H[ií]dricos\nProvincia de Santa Cruz/gm, 'Provincia de Santa Cruz - Ministerio de Energía y Minería - Secretaría de Recursos Hídricos'); // standardize
 
-    const regex1 = /(^AVISO\n|^AVISO [A-ZÁÉÍÓÚ\.\s]+\n^“[A-ZÁÉÍÓÚ\.\s]+”\n)([\s\S]*?)(?=(^AVISO\n|^AVISO [A-ZÁÉÍÓÚ\.\s]+\n^“[A-ZÁÉÍÓÚ\.\s]+”\n))/gm;
+    const regex1 = /(^AVISO\n|^AVISO [A-ZÁÉÍÓÚ\.\s]+\n^“[A-ZÁÉÍÓÚ\.\s]+”\n|^AVISO [A-ZÁÉÍÓÚ]*?\n|^CONSTITUCI[OÓ]N DE SOCIEDAD\n|^Art\.? \d+[º°] – Ley \d+\n|^Provincia de Santa Cruz - Ministerio de Salud y Ambiente - Secretaría de Estado de Ambiente\n|^Provincia de Santa Cruz - Ministerio de Energía y Minería - Secretaría de Recursos Hídricos\n)([\s\S]*?)(?=(^AVISO\n|^AVISO [A-ZÁÉÍÓÚ\.\s]+\n^“[A-ZÁÉÍÓÚ\.\s]+”\n|^AVISO [A-ZÁÉÍÓÚ]*?\n|^CONSTITUCI[OÓ]N DE SOCIEDAD\n|^Art\.? \d+[º°] – Ley \d+\n|^Provincia de Santa Cruz - Ministerio de Salud y Ambiente - Secretaría de Estado de Ambiente\n|^Provincia de Santa Cruz - Ministerio de Energía y Minería - Secretaría de Recursos Hídricos\n))/gm;
     let match;
     const avisos = [];
 
     while ((match = regex1.exec(content)) !== null) {
         const aviso = {
-            title: 'Auditoría Legislativa - ' + `${sectionName} - ` + match[1].trim(),
+            title: 'Auditoría Legislativa - ' + `${sectionName} - ` + match[1].replace(/\n/, ' ').trim(),
             content: match[2].trim(),
         };
 
@@ -233,12 +236,12 @@ function processAvisos(sectionName, content) {
 
     content = content.replace(regex1, '');
 
-    const regex2 = /(^AVISO\n|^AVISO [A-ZÁÉÍÓÚ\.\s]+\n^“[A-ZÁÉÍÓÚ\.\s]+”\n)([\s\S]*)/gm;
+    const regex2 = /(^AVISO\n|^AVISO [A-ZÁÉÍÓÚ\.\s]+\n^“[A-ZÁÉÍÓÚ\.\s]+”\n|^AVISO [A-ZÁÉÍÓÚ]*?\n|^CONSTITUCI[OÓ]N DE SOCIEDAD\n|^Art\.? \d+[º°] – Ley \d+\n|^Provincia de Santa Cruz - Ministerio de Salud y Ambiente - Secretaría de Estado de Ambiente\n|^Provincia de Santa Cruz - Ministerio de Energía y Minería - Secretaría de Recursos Hídricos\n)([\s\S]*)/gm;
     const lastAviso = regex2.exec(content);
 
     if (lastAviso) {
         const aviso = {
-            title: 'Auditoría Legislativa - ' + `${sectionName} - ` + lastAviso[1].trim(),
+            title: 'Auditoría Legislativa - ' + `${sectionName} - ` + lastAviso[1].replace(/\n/, ' ').trim(),
             content: lastAviso[2].trim(),
         };
         avisos.push(aviso);
@@ -250,8 +253,7 @@ function processAvisos(sectionName, content) {
 
 function processCalls(sectionName, content) {
     content = content.replace(/__+\n/g, '');//strip underscores
-    fs.writeFileSync('content.txt', content);
-    const regex1 = /(^CONVOCATORIA\n^“[A-ZÁÉÍÓÚÑ\.\s]+”\n|^CONVOCATORIA [A-ZÁÉÍÓÚÑ\.\s]+\n^“[A-ZÁÉÍÓÚÑ\.\s]+”\n)([\s\S]*?)(?=(^CONVOCATORIA\n|^CONVOCATORIA [A-ZÁÉÍÓÚÑ\.\s]+\n^“[A-ZÁÉÍÓÚÑ\.\s]+”\n))/gm;
+    const regex1 = /(^CONVOCATORIA\n^“?[A-ZÁÉÍÓÚÑ\.\s]+”?\n|^CONVOCATORIA [A-ZÁÉÍÓÚÑ\.\s]+\n^“?[A-ZÁÉÍÓÚÑ\.\s]+”?\n|^ASAMBLEA EXTRAORDINARIA\n)([\s\S]*?)(?=(^CONVOCATORIA\n^“?[A-ZÁÉÍÓÚÑ\.\s]+”?\n|^CONVOCATORIA [A-ZÁÉÍÓÚÑ\.\s]+\n^“?[A-ZÁÉÍÓÚÑ\.\s]+”?\n|^ASAMBLEA EXTRAORDINARIA\n))/gm;
     let match;
     const calls = [];
 
@@ -267,7 +269,7 @@ function processCalls(sectionName, content) {
 
     content = content.replace(regex1, '');
 
-    const regex2 = /(^CONVOCATORIA\n^“[A-ZÁÉÍÓÚÑ\.\s]+”\n|^CONVOCATORIA [A-ZÁÉÍÓÚÑ\.\s]+\n^“[A-ZÁÉÍÓÚÑ\.\s]+”\n)([\s\S]*)/gm;
+    const regex2 = /(^CONVOCATORIA\n^“?[A-ZÁÉÍÓÚÑ\.\s]+”?\n|^CONVOCATORIA [A-ZÁÉÍÓÚÑ\.\s]+\n^“?[A-ZÁÉÍÓÚÑ\.\s]+”?\n|^ASAMBLEA EXTRAORDINARIA\n)([\s\S]*)/gm;
 
     const lastCall = regex2.exec(content);
 
