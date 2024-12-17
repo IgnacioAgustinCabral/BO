@@ -33,9 +33,9 @@ module.exports = async function parseSantaCruzPDF(pdfBuffer) {
             'DECLARACIONES': processDeclarations,
             'RESOLUCIONES': processResolutions,
             'DISPOSICIONES': processDispositions,
-            'EDICTOS': processEdicts,
             'AVISOS': processAvisos,
             'CONVOCATORIAS': processCalls,
+            'EDICTOS': processEdicts,
         };
 
         let content = [];
@@ -188,8 +188,8 @@ function processEdicts(sectionName, content) {
     content = content.replace(/__+\n/g, '')//strip underscores
         .replace(/E D I C T O\n/g, 'EDICTO\n') // standardize
         .replace(/A V I S O\n/g, 'AVISO\n');
-
-    const regex1 = /(^\s?EDICTO(?: JUDICIAL(?: N[º°] \d{1,4}\/\d{4})?| N[º°] \d{1,4}\/\d{4}| N[º°] \d+| N[º°]\/\d+| N[º°] \d+\/\d+)?\n|^AVISO DE LEY\n|^AVISO\n^“[A-ZÁÉÍÓÚ\.\s]+”\n|^AVISO\n)([\s\S]*?)(?=(^\s?EDICTO(?: JUDICIAL(?: N[º°] \d{1,4}\/\d{4})?| N[º°] \d{1,4}\/\d{4}| N[º°] \d+| N[º°]\/\d+| N[º°] \d+\/\d+)?\n|^AVISO DE LEY\n|^AVISO\n^“[A-ZÁÉÍÓÚ\.\s]+”\n|^AVISO\n))/gm;
+    fs.writeFileSync('santacruz.txt', content);
+    const regex1 = /(^\s?EDICTO(?: JUDICIAL(?: N[º°] \d{1,4}\/\d{4})?| N[º°] \d{1,4}\/\d{4}| N[º°] \d+| N[º°]\/\d+| N[º°] \d+\/\d+)?\n|^EDICTO \d+\/\d+\n|^AVISO [A-ZÁÉÍÓÚ\s?]*?\n|^AVISO LEY [0-9.?]+\n|^AVISO LEGAL\n|^AVISO DE LEY [-–] [0-9.?]+\n|^AVISO DE LEY\n|^AVISO\n^“[A-ZÁÉÍÓÚ\.\s]+”\n|^AVISO\n)([\s\S]*?)(?=(^\s?EDICTO(?: JUDICIAL(?: N[º°] \d{1,4}\/\d{4})?| N[º°] \d{1,4}\/\d{4}| N[º°] \d+| N[º°]\/\d+| N[º°] \d+\/\d+)?\n|^EDICTO \d+\/\d+\n|^AVISO [A-ZÁÉÍÓÚ\s?]*?\n|^AVISO LEY [0-9.?]+\n|^AVISO LEGAL\n|^AVISO DE LEY [-–] [0-9.?]+\n|^AVISO DE LEY\n|^AVISO\n^“[A-ZÁÉÍÓÚ\.\s]+”\n|^AVISO\n))/gm;
     let match;
     const edicts = [];
 
@@ -204,7 +204,7 @@ function processEdicts(sectionName, content) {
 
     content = content.replace(regex1, '');
 
-    const regex2 = /(^\s?EDICTO(?: JUDICIAL(?: N[º°] \d{1,4}\/\d{4})?| N[º°] \d{1,4}\/\d{4}| N[º°] \d+| N[º°]\/\d+| N[º°] \d+\/\d+)?\n|^AVISO DE LEY\n|^AVISO\n^“[A-ZÁÉÍÓÚ\.\s]+”\n|^AVISO\n)([\s\S]*)/gm;
+    const regex2 = /(^\s?EDICTO(?: JUDICIAL(?: N[º°] \d{1,4}\/\d{4})?| N[º°] \d{1,4}\/\d{4}| N[º°] \d+| N[º°]\/\d+| N[º°] \d+\/\d+)?\n|^EDICTO \d+\/\d+\n|^AVISO [A-ZÁÉÍÓÚ\s?]*?\n|^AVISO LEY [0-9.?]+\n|^AVISO LEGAL\n|^AVISO DE LEY [-–] [0-9.?]+\n|^AVISO DE LEY\n|^AVISO\n^“[A-ZÁÉÍÓÚ\.\s]+”\n|^AVISO\n)([\s\S]*)/gm;
     const lastEdict = regex2.exec(content);
 
     if (lastEdict) {
@@ -224,7 +224,7 @@ function processAvisos(sectionName, content) {
         .replace(/^Provincia de Santa Cruz\nMinisterio de Salud y Ambiente\nSecretar[ií]a de Estado de Ambiente/gm, 'Provincia de Santa Cruz - Ministerio de Salud y Ambiente - Secretaría de Estado de Ambiente')
         .replace(/^Ministerio de Energ[ií]a y Miner[ií]a\nSecretar[ií]a de Recursos H[ií]dricos\nProvincia de Santa Cruz/gm, 'Provincia de Santa Cruz - Ministerio de Energía y Minería - Secretaría de Recursos Hídricos'); // standardize
 
-    const regex1 = /(^AVISO\n|^AVISO [A-ZÁÉÍÓÚ\.\s]+\n^“[A-ZÁÉÍÓÚ\.\s]+”\n|^AVISO [A-ZÁÉÍÓÚ]*?\n|^CONSTITUCI[OÓ]N DE SOCIEDAD\n|^Art\.? \d+[º°] – Ley \d+\n|^Provincia de Santa Cruz - Ministerio de Salud y Ambiente - Secretaría de Estado de Ambiente\n|^Provincia de Santa Cruz - Ministerio de Energía y Minería - Secretaría de Recursos Hídricos\n)([\s\S]*?)(?=(^AVISO\n|^AVISO [A-ZÁÉÍÓÚ\.\s]+\n^“[A-ZÁÉÍÓÚ\.\s]+”\n|^AVISO [A-ZÁÉÍÓÚ]*?\n|^CONSTITUCI[OÓ]N DE SOCIEDAD\n|^Art\.? \d+[º°] – Ley \d+\n|^Provincia de Santa Cruz - Ministerio de Salud y Ambiente - Secretaría de Estado de Ambiente\n|^Provincia de Santa Cruz - Ministerio de Energía y Minería - Secretaría de Recursos Hídricos\n))/gm;
+    const regex1 = /(^AVISO LEGAL LEY [0-9.?]+\n|^AVISO\n|^AVISO [A-ZÁÉÍÓÚ\.\s]+\n^“[A-ZÁÉÍÓÚ\.\s]+”\n|^AVISO [A-ZÁÉÍÓÚ]*?\n|^CONSTITUCI[OÓ]N DE SOCIEDAD\n|^Art\.? \d+[º°] – Ley \d+\n|^Provincia de Santa Cruz - Ministerio de Salud y Ambiente - Secretaría de Estado de Ambiente\n|^Provincia de Santa Cruz - Ministerio de Energía y Minería - Secretaría de Recursos Hídricos\n)([\s\S]*?)(?=(^AVISO LEGAL LEY [0-9.?]+\n|^AVISO\n|^AVISO [A-ZÁÉÍÓÚ\.\s]+\n^“[A-ZÁÉÍÓÚ\.\s]+”\n|^AVISO [A-ZÁÉÍÓÚ]*?\n|^CONSTITUCI[OÓ]N DE SOCIEDAD\n|^Art\.? \d+[º°] – Ley \d+\n|^Provincia de Santa Cruz - Ministerio de Salud y Ambiente - Secretaría de Estado de Ambiente\n|^Provincia de Santa Cruz - Ministerio de Energía y Minería - Secretaría de Recursos Hídricos\n))/gm;
     let match;
     const avisos = [];
 
@@ -239,7 +239,7 @@ function processAvisos(sectionName, content) {
 
     content = content.replace(regex1, '');
 
-    const regex2 = /(^AVISO\n|^AVISO [A-ZÁÉÍÓÚ\.\s]+\n^“[A-ZÁÉÍÓÚ\.\s]+”\n|^AVISO [A-ZÁÉÍÓÚ]*?\n|^CONSTITUCI[OÓ]N DE SOCIEDAD\n|^Art\.? \d+[º°] – Ley \d+\n|^Provincia de Santa Cruz - Ministerio de Salud y Ambiente - Secretaría de Estado de Ambiente\n|^Provincia de Santa Cruz - Ministerio de Energía y Minería - Secretaría de Recursos Hídricos\n)([\s\S]*)/gm;
+    const regex2 = /(^AVISO LEGAL LEY [0-9.?]+\n|^AVISO\n|^AVISO [A-ZÁÉÍÓÚ\.\s]+\n^“[A-ZÁÉÍÓÚ\.\s]+”\n|^AVISO [A-ZÁÉÍÓÚ]*?\n|^CONSTITUCI[OÓ]N DE SOCIEDAD\n|^Art\.? \d+[º°] – Ley \d+\n|^Provincia de Santa Cruz - Ministerio de Salud y Ambiente - Secretaría de Estado de Ambiente\n|^Provincia de Santa Cruz - Ministerio de Energía y Minería - Secretaría de Recursos Hídricos\n)([\s\S]*)/gm;
     const lastAviso = regex2.exec(content);
 
     if (lastAviso) {
