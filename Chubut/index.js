@@ -475,7 +475,6 @@ function processOfficialAdvertising(sectionContent) {
 }
 
 function processGeneralSection(sectionContent) {
-    fs.writeFileSync('general-section.txt', sectionContent);
     const regex = /^([A-ZÁÉÍÓÚÜÑ1234567890\s?.,()<\–\-«»º°\/&]+\n|Carta de Intenci[óo]n)([\s\S]*?)(I:\s?\d{2}-\d{2}-\d{2}(?: V:\s?\d{2}-\d{2}-\d{2,4}|P: \d{2}-\d{2}-\d{2})| y \d{2}-\d{2}-\d{2}|P: \d{2}-\d{2}-\d{2})/gm;
     const sections = [];
 
