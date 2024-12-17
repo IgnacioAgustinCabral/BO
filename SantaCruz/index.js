@@ -30,6 +30,7 @@ module.exports = async function parseSantaCruzPDF(pdfBuffer) {
         const sectionProcessors = {
             'LEYES': processLaws,
             'DECRETOS SINTETIZADOS': processSynthesizedDecrees,
+            'DECLARACIONES': processDeclarations,
             'RESOLUCIONES': processResolutions,
             'DISPOSICIONES': processDispositions,
             'EDICTOS': processEdicts,
@@ -44,6 +45,8 @@ module.exports = async function parseSantaCruzPDF(pdfBuffer) {
                 sectionName = 'RESOLUCIONES';  // group all resolutions under the same section name
             } else if (/DISPOSICI[ÓO]N|DISPOSICI[ÓO]NES/.test(sectionName)) {
                 sectionName = 'DISPOSICIONES';
+            } else if (/DECLARACI[ÓO]N|DECLARACI[ÓO]NES/.test(sectionName)) {
+                sectionName = 'DECLARACIONES';
             }
             const processor = sectionProcessors[sectionName];
             if (processor) {
@@ -192,7 +195,7 @@ function processEdicts(sectionName, content) {
 
     while ((match = regex1.exec(content)) !== null) {
         const edict = {
-            title: 'Auditoría Legislativa - ' + 'EDICTOS - ' + match[1].replace(/\n/,' ').trim(),
+            title: 'Auditoría Legislativa - ' + 'EDICTOS - ' + match[1].replace(/\n/, ' ').trim(),
             content: match[2].trim(),
         };
 
@@ -206,7 +209,7 @@ function processEdicts(sectionName, content) {
 
     if (lastEdict) {
         const edict = {
-            title: 'Auditoría Legislativa - ' + `${sectionName} - ` + lastEdict[1].replace(/\n/,' ').trim(),
+            title: 'Auditoría Legislativa - ' + `${sectionName} - ` + lastEdict[1].replace(/\n/, ' ').trim(),
             content: lastEdict[2].trim(),
         };
         edicts.push(edict);
@@ -283,4 +286,35 @@ function processCalls(sectionName, content) {
     }
 
     return calls;
+}
+
+function processDeclarations(sectionName, content) {
+    content = content.replace(/__+\n/g, ''); //strip underscores
+    const regex1 = /(^DECLARACI[ÓO]N N[º°] \d+\n)([\s\S]*?)(?=(^DECLARACI[ÓO]N N[º°] \d+\n))/gm;
+    let match;
+    const declarations = [];
+
+    while ((match = regex1.exec(content)) !== null) {
+        const declaration = {
+            title: 'Auditoría Legislativa - ' + `${sectionName} - ` + match[1].trim(),
+            content: match[2].trim(),
+        };
+
+        declarations.push(declaration);
+    }
+
+    content = content.replace(regex1, '');
+
+    const regex2 = /(^DECLARACI[ÓO]N N[º°] \d+\n)([\s\S]*)/gm;
+    const lastDeclaration = regex2.exec(content);
+
+    if (lastDeclaration) {
+        const declaration = {
+            title: 'Auditoría Legislativa - ' + `${sectionName} - ` + lastDeclaration[1].trim(),
+            content: lastDeclaration[2].trim(),
+        };
+        declarations.push(declaration);
+    }
+
+    return declarations;
 }
