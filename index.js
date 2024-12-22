@@ -2,6 +2,7 @@ const axios = require('axios');
 const express = require('express');
 const parseChubutPDF = require('./Chubut/index.js');
 const parseSantaCruzPDF = require('./SantaCruz/index.js');
+const getBold = require('./utils/getBold');
 const port = 4000;
 const app = express();
 
