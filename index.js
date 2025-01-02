@@ -2,6 +2,7 @@ const axios = require('axios');
 const express = require('express');
 const parseChubutPDF = require('./Chubut/index.js');
 const parseSantaCruzPDF = require('./SantaCruz/index.js');
+const parseCaletaOliviaPDF = require('./CaletaOlivia/index.js');
 const port = 4000;
 const app = express();
 
@@ -14,7 +15,10 @@ app.get('/process-bulletin', async (req, res) => {
         data = await parseChubutPDF(pdfBuffer);
     } else if (sources_id === '620') {
         data = await parseSantaCruzPDF(pdfBuffer);
-    } else {
+    } else if (sources_id === '624') {
+        data = await parseCaletaOliviaPDF(pdfBuffer);
+    }
+    else {
         data = {error: 'No parser for this source'};
     }
 
