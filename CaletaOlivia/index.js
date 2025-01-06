@@ -1,10 +1,13 @@
 const pdf = require("pdf-parse");
 module.exports = async function parseCaletaOliviaPDF(pdfBuffer) {
     const pdfData = await pdf(pdfBuffer);
-    let decreeTitleList = [];
     let text = pdfData.text;
+    let articles = [];
+    let ordenanzas = [];
+    let decrees = [];
+    let edicts = [];
 
-    text = text.replace(/COPIA FIEL B\.O N[º°].*$/gm, '')
+    text.replace(/COPIA FIEL B\.O N[º°].*$/gm, '')
         .replace(/Edición a cargo de la Subsecretaria de Asuntos Legislativos, \d+ de \w+ de \d+ \(9011\) Caleta Olivia.*$/gm, '')
         .replace(/Los documentos que se publiquen en el Boletín Oficial de la Municipalidad de Caleta Olivia.*$/gm, '')
         .replace(/del Artículo 2° del Código Civil por el mismo efecto de su publicación.*$/gm, '')
@@ -13,63 +16,75 @@ module.exports = async function parseCaletaOliviaPDF(pdfBuffer) {
         .replace(/BOLETÍN OFICIAL CALETA OLIVIA, \d+ de \w+\s*\d+\s*P á g i n a.*$/gm, '')// page header
         .replace(/BOLETÍN OFICIAL([\s\S]*)MUNICIPALIDAD DE CALETA OLIVIA([\s\S]*)AÑO \d+ N[º°] \d+.*$/gm, '')// #333???
         .replace(/AUTORIDADES MUNICIPALES.*$/gm, '')
-        .replace(/EDICTO[\s\S]*?P[aá]gs?.*$/gm, '')
-        .replace(/D E C R E T O S.*$/gm, '')
+        .replace(/EDICTOS?[\s\S]*?P[aá]gs?.*$/gm, '')
+        .replace(/D E C R E T O S?.*$/gm, '')
+        .replace(/D E C R E T O S? S I N T E T I Z A D O S?.*$/gm, '')
+        .replace(/E D I C T O S?.*$/gm, '')
         .replace(/ +\n/gm, '\n')
         .replace(/ {2,}/gm, ' ')
         .replace(/\n{2,}/gm, '\n')
-        .replace(/DECRETO N[º°] \d+ \w+\/\d+\.-.*$/gm, '')
-        .replace(/(DECRETOS?|DECRETOS? SINTETIZADOS?)\n[\s\S]*?P[aá]gs?.*$/gm, (match) => {
-            decreeTitleList.push(match) // Guarda el contenido eliminado
-            return ''; // Elimina el contenido del texto original
+        .replace(/O R D E N A N Z A S? S I N T E T I Z A D A S?.*$/gm, '')
+        .replace(/(DECRETOS?|DECRETOS? SINTETIZADOS?)\n[\s\S]*?P[aá]gs?.*$/gm, '')
+        .replace(/(ORDENANZAS?|ORDENANZAS? SINTETIZADAS?)\n[\s\S]*?P[aá]gs?.*$/gm, '')
+        //sections
+        .replace(/(ORDENANZA[\s\S]*?.[-–])([\s\S]*?)Sr. Pablo (M. )?CARRIZO/gm, (match) => {
+            ordenanzas.push(match);
+            return '';
+        })
+        .replace(/^DECRETO N[º°] \d+.*$([\s\S]*?)Sr. Pablo (M. )?CARRIZO/gm, (match) => {
+            decrees.push(match);
+            return '';
+        })
+        .replace(/(MUNI?CIPALIDAD DE CALETA OLIVIA\n)([\s\S]*?)(?=MUNI?CIPALIDAD DE CALETA OLIVIA\n|$)/g, (match) => {
+            edicts.push(match);
+            return '';
         })
 
-    const decreeRegex = /CALETA OLIVIA, \d+([\s\S]*?)(?=CALETA OLIVIA|$)/g;
-    
-    let matches = [];
-    let match;
+    articles = articles
+        .concat(extractOrdenanzas(ordenanzas))
+        .concat(extractDecrees(decrees))
+        .concat(extractEdicts(edicts));
 
-    while ((match = decreeRegex.exec(text)) !== null) {
-        matches.push(match[0].trim());
-    }
+    return articles;
+}
 
+
+function extractOrdenanzas(ordenanzasText) {
+    let ordenanzas = [];
+    const ordenanzaRegex = /ORDENANZA MUNICIPAL N[º°] \d+/;
+    ordenanzasText.forEach(ordenanza => {
+        const ordenanzaTitle = ordenanza.match(ordenanzaRegex);
+        ordenanzas.push({
+            title: `Auditoría Legislativa - ORDENANZAS MUNICIPALES - ${ordenanzaTitle[0].trim()}`,
+            content: ordenanza.trim()
+        })
+    })
+
+    return ordenanzas;
+}
+
+function extractDecrees(decreesText) {
     let decrees = [];
-    let decreesObject = {
-        'DECRETOS': [],
-        'DECRETOS SINTETIZADOS': []
-    };
-
-    decreeTitleList.forEach((sumario) => {
-        if (sumario.includes("SINTETIZADOS")) {
-            // Si es un decreto sintetizado, agregamos los decretos bajo la clave 'DECRETOS SINTETIZADOS'
-            decreesObject['DECRETOS SINTETIZADOS'] = decreesObject['DECRETOS SINTETIZADOS'].concat(extractDecrees(sumario));
-        } else {
-            // Si no es sintetizado, agregamos los decretos bajo la clave 'DECRETOS'
-            decreesObject['DECRETOS'] = decreesObject['DECRETOS'].concat(extractDecrees(sumario));
-        }
-    });
-
-    Object.keys(decreesObject).forEach((key, index) => {
-        const decreesList = decreesObject[key];
-        const isSintetizado = /SINTETIZADOS/i.test(key);
-        const titlePrefix = isSintetizado ? "Auditoría Legislativa - DECRETO SINTETIZADO - " : "Auditoría Legislativa - DECRETO - ";
-
-        decreesList.forEach((decree, decreeIndex) => {
-            let title = decree.replace(/Dto\. N° /g, 'DECRETO N° ');
-            title = `${titlePrefix}${title}`
-            const content = matches[decreeIndex];
-            decrees.push({title, content});
-        });
-    });
-
+    const decreeRegex = /(DECRETO N[º°] \d+) (MCO\/24\.-)/;
+    decreesText.forEach(decreto => {
+        const decreeTitle = decreto.match(decreeRegex);
+        decrees.push({
+            title: `Auditoría Legislativa - DECRETOS - ${decreeTitle[1].trim()}`,
+            content: decreto.trim()
+        })
+    })
 
     return decrees;
 }
 
-function extractDecrees(sumario) {
-    const decreeRegex = /Dto\. N° \d+\/\d+/g;
-    let decrees = sumario.match(decreeRegex) || [];
-    decrees = Array.from(new Set(decrees));
+function extractEdicts(edictsText) {
+    let edicts = [];
+    edictsText.forEach(edict => {
+        edicts.push({
+            title: 'Auditoría Legislativa - EDICTOS - EDICTO',
+            content: edict.trim()
+        })
+    })
 
-    return decrees;
+    return edicts;
 }
