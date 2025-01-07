@@ -9,20 +9,25 @@ const app = express();
 app.get('/process-bulletin', async (req, res) => {
     const {url, sources_id} = req.query;
 
-    const pdfBuffer = await downloadPDF(url);
-    let data;
-    if (sources_id === '621') {
-        data = await parseChubutPDF(pdfBuffer);
-    } else if (sources_id === '620') {
-        data = await parseSantaCruzPDF(pdfBuffer);
-    } else if (sources_id === '624') {
-        data = await parseCaletaOliviaPDF(pdfBuffer);
-    }
-    else {
-        data = {error: 'No parser for this source'};
+    try {
+        const pdfBuffer = await downloadPDF(url);
+        let data;
+        if (sources_id === '621') {
+            data = await parseChubutPDF(pdfBuffer);
+        } else if (sources_id === '620') {
+            data = await parseSantaCruzPDF(pdfBuffer);
+        } else if (sources_id === '624') {
+            data = await parseCaletaOliviaPDF(pdfBuffer);
+        } else {
+            data = {error: 'No parser for this source'};
+        }
+
+        res.json(data);
+    } catch (error) {
+        res.json(null);
+        console.log(error);
     }
 
-    res.json(data);
 });
 
 app.listen(port, () => {
