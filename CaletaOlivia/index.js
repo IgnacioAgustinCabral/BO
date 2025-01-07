@@ -5,6 +5,7 @@ module.exports = async function parseCaletaOliviaPDF(pdfBuffer) {
     let articles = [];
     let ordenanzas = [];
     let decrees = [];
+    let resolutionsRBT = [];
     let edicts = [];
 
     text.replace(/COPIA FIEL B\.O N[º°].*$/gm, '')
@@ -20,19 +21,27 @@ module.exports = async function parseCaletaOliviaPDF(pdfBuffer) {
         .replace(/D E C R E T O S?.*$/gm, '')
         .replace(/D E C R E T O S? S I N T E T I Z A D O S?.*$/gm, '')
         .replace(/E D I C T O S?.*$/gm, '')
+        .replace(/EDICTOS?.*$/gm, '')
+        .replace(/RESOLUCIONES SINTETIZADAS.*$/gm, '')
+        .replace(/RESOLUCIONES BIDEPARTAMENTALES ?\nDE TIERRAS ?\nSINTETIZADAS.*$/gm, '')
         .replace(/ +\n/gm, '\n')
         .replace(/ {2,}/gm, ' ')
         .replace(/\n{2,}/gm, '\n')
         .replace(/O R D E N A N Z A S? S I N T E T I Z A D A S?.*$/gm, '')
         .replace(/(DECRETOS?|DECRETOS? SINTETIZADOS?)\n[\s\S]*?P[aá]gs?.*$/gm, '')
         .replace(/(ORDENANZAS?|ORDENANZAS? SINTETIZADAS?)\n[\s\S]*?P[aá]gs?.*$/gm, '')
+        .replace(/(RESOLUCIONES BIDEPARTAMENTALES DE TIERRAS|RESOLUCIONES BIDEPARTAMENTALES DE TIERRAS SINTETIZADAS|RESOLUCI[OÓ]N BIDEPARTAMENTAL DE TIERRAS|RESOLUCI[OÓ]N BIDEPARTAMENTAL DE TIERRAS SINTETIZADA)\n[\s\S]*?P[aá]gs?.*$/gm, '')
         //sections
-        .replace(/(ORDENANZA[\s\S]*?.[-–])([\s\S]*?)Sr. Pablo (M. )?CARRIZO/gm, (match) => {
+        .replace(/(ORDENANZA[\s\S]*?\.[-–])([\s\S]*?)Sr. Pablo (M. )?CARRIZO/gm, (match) => {
             ordenanzas.push(match);
             return '';
         })
         .replace(/^DECRETO N[º°] \d+.*$([\s\S]*?)Sr. Pablo (M. )?CARRIZO/gm, (match) => {
             decrees.push(match);
+            return '';
+        })
+        .replace(/(RESOLUCI[OÓ]N N[º°] [\s\S]*?\.[-–]\n)([\s\S]*?(Sra. Eliana Y. LABADO|Sra. Eliana LABADO|Sra. Eliana LAVADO|Sra. Eliana Y. LAVADO))/gm, (match) => {
+            resolutionsRBT.push(match);
             return '';
         })
         .replace(/(MUNI?CIPALIDAD DE CALETA OLIVIA\n)([\s\S]*?)(?=MUNI?CIPALIDAD DE CALETA OLIVIA\n|$)/g, (match) => {
@@ -43,6 +52,7 @@ module.exports = async function parseCaletaOliviaPDF(pdfBuffer) {
     articles = articles
         .concat(extractOrdenanzas(ordenanzas))
         .concat(extractDecrees(decrees))
+        .concat(extractResolutionsRBT(resolutionsRBT))
         .concat(extractEdicts(edicts));
 
     return articles;
@@ -87,4 +97,18 @@ function extractEdicts(edictsText) {
     })
 
     return edicts;
+}
+
+function extractResolutionsRBT(resolutionsRBTText) {
+    let resolutionsRBT = [];
+    const resolutionRBTRegex = /RESOLUCI[OÓ]N N[º°] \d+/;
+    resolutionsRBTText.forEach(resolutionRBT => {
+        const resolutionRBTTitle = resolutionRBT.match(resolutionRBTRegex);
+        resolutionsRBT.push({
+            title: `Auditoría Legislativa - RESOLUCIONES BIDEPARTAMENTALES DE TIERRAS - ${resolutionRBTTitle[0].trim()}`,
+            content: resolutionRBT.trim()
+        })
+    })
+
+    return resolutionsRBT;
 }
