@@ -29,10 +29,15 @@ module.exports = async function parseCaletaOliviaPDF(pdfBuffer) {
         .replace(/\n{2,}/gm, '\n')
         .replace(/O R D E N A N Z A S? S I N T E T I Z A D A S?.*$/gm, '')
         .replace(/(DECRETOS?|DECRETOS? SINTETIZADOS?)\n[\s\S]*?P[aá]gs?.*$/gm, '')
+        .replace(/ORDENANZAS ATRASADAS\n[\s\S]*?P[aá]gs?.*$/gm,'')
         .replace(/(ORDENANZAS?|ORDENANZAS? SINTETIZADAS?)\n[\s\S]*?P[aá]gs?.*$/gm, '')
         .replace(/(RESOLUCIONES BIDEPARTAMENTALES DE TIERRAS|RESOLUCIONES BIDEPARTAMENTALES DE TIERRAS SINTETIZADAS|RESOLUCI[OÓ]N BIDEPARTAMENTAL DE TIERRAS|RESOLUCI[OÓ]N BIDEPARTAMENTAL DE TIERRAS SINTETIZADA)\n[\s\S]*?P[aá]gs?.*$/gm, '')
         //sections
         .replace(/(ORDENANZA[\s\S]*?\.[-–])([\s\S]*?)Sr. Pablo (M. )?CARRIZO/gm, (match) => {
+            ordenanzas.push(match);
+            return '';
+        })
+        .replace(/(ORDENANZA[\s\S]*?\.[-–])([\s\S]*?)Sr. Facundo BELARDE/gm, (match) => {
             ordenanzas.push(match);
             return '';
         })
@@ -61,9 +66,12 @@ module.exports = async function parseCaletaOliviaPDF(pdfBuffer) {
 
 function extractOrdenanzas(ordenanzasText) {
     let ordenanzas = [];
-    const ordenanzaRegex = /ORDENANZA MUNICIPAL N[º°] \d+/;
+    const ordenanzaRegex = /ORDENANZA (MUNICIPAL )?N[º°] ?\d+/;
     ordenanzasText.forEach(ordenanza => {
         const ordenanzaTitle = ordenanza.match(ordenanzaRegex);
+        console.log("#####")
+        console.log(ordenanzaTitle+'ACA');
+        console.log("#####")
         ordenanzas.push({
             title: `Auditoría Legislativa - ORDENANZAS MUNICIPALES - ${ordenanzaTitle[0].trim()}`,
             content: ordenanza.trim()
