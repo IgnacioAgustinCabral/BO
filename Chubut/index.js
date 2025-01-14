@@ -10,7 +10,7 @@ module.exports = async function parseChubutPDF(pdfBuffer) {
             .replace(/FRANQUEO A PAGAR\n(.*?)[Ss]ecci[óo]n [Oo]ficial/s, '') //eliminates this section
             .replace(/([a-zA-ZáéíóúÁÉÍÓÚüÜñÑ])-\n([a-zA-ZáéíóúÁÉÍÓÚüÜñÑ])/g, "$1$2") //joins hyphenated words
             .replace(/BOLET[IÍ]N OFICIAL\n/g, '') //eliminates
-            .replace(/P[AÁ]GINA (\d+)\n(Lunes|Martes|Mi[eé]rcoles|Jueves|Viernes|S[aá]bado|Domingo)\s\d{1,2}\sde\s(Enero|Febrero|Marzo|Abril|Mayo|Junio|Julio|Agosto|Septiembre|Octubre|Noviembre|Diciembre)\sde\s\d{4}\n/gs, '') //eliminates page number and date
+            .replace(/P[AÁ]GINA (\d+)\n([Ll]unes|[Mm]artes|[Mm]i[eé]rcoles|[Jj]ueves|[Vv]iernes|[Ss][aá]bado|[Dd]omingo) \d{1,2} de ([Ee]nero|[Ff]ebrero|[Mm]arzo|[Aa]bril|[Mm]ayo|[Jj]unio|[Jj]ulio|[Aa]gosto|[Ss]eptiembre|[Oo]ctubre|[Nn]oviembre|[Dd]iciembre) de \d{4}\n/gs, '') //eliminates page number and date
             .replace(
                 /([^\n])\s*(LEY PROVINCIAL|LEYES PROVINCIALES|DECRETO PROVINCIAL|DECRETOS PROVINCIALES|DECRETO SINTETIZADO|DECRETOS SINTETIZADOS|RESOLUCIONES|RESOLUCI[ÓO]N|RESOLUCI[ÓO]NES SINTETIZADAS|RESOLUCI[ÓO]N SINTETIZADA|DISPOSICI[ÓO]N|DISPOSICIONES|ACUERDO|ACUERDOS|DICT[ÁA]MEN|DICT[ÁA]MENES|DISPOSICI[ÓO]N SINTETIZADA|DISPOSICIONES SINTETIZADAS|REGISTRO DE\nPUBLICIDAD OFICIAL|DECLARACIONES|DECLARACI[ÓO]N|Secci[óo]n General)/g,
                 (match, precedingText, sectionTitle) => `${precedingText}\n${sectionTitle}`)
@@ -158,7 +158,13 @@ function processSynthesizedDecrees(sectionContent) {
 
     let match;
     while ((match = synthesizedDecreeRegex.exec(formattedContent)) !== null) {
-        let synthesizedDecreeContent = match[0].trim();
+        let synthesizedDecreeContent = match[0]
+            .replace(/\([Vv]er anexos?\)/g, '')
+            .replace(/(Artículo\s+\d+[°º]\.-\s.*?)([\s\S]*?)(?=\s*Artículo\s+\d+[°º]\.-|$)/g, (match, group1, group2) => {
+                const contentWithNoNewLine = group2.replace(/\n+/g, ' ').trim();
+                return `${group1}${contentWithNoNewLine}\n`;
+            })
+            .trim();
         let titleMatch;
 
         while ((titleMatch = decreeRegex.exec(synthesizedDecreeContent)) !== null) {
@@ -427,7 +433,11 @@ function processDispositions(sectionContent) {
         while ((match = dispositionGroupRegex.exec(subsectionContent)) !== null) {
             let dispositionContent = match[0].trim();
             let titleMatch;
-
+            dispositionContent = dispositionContent.replace(/([^;:])\n/g, '$1 ')
+                .replace(/(Artículo\s+\d+[°º]\.-\s.*?)([\s\S]*?)(?=\s*Artículo\s+\d+[°º]\.-|$)/g, '$1$2\n\n')
+                .replace(/([.,] )([a-z]\))/g, '$1\n$2')
+                .replace(/(\s)(\d+\.-)/g, '$1\n$2')
+            fs.writeFileSync('aber.txt', dispositionContent)
             while ((titleMatch = dispositionRegex.exec(dispositionContent)) !== null) {
                 dispositions.push({
                     title: 'Auditoría Legislativa - ' + 'Disposición - ' + titleMatch[0].trim(),
