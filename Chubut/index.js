@@ -12,7 +12,7 @@ module.exports = async function parseChubutPDF(pdfBuffer) {
             .replace(/BOLET[IÍ]N OFICIAL\n/g, '') //eliminates
             .replace(/P[AÁ]GINA (\d+)\n([Ll]unes|[Mm]artes|[Mm]i[eé]rcoles|[Jj]ueves|[Vv]iernes|[Ss][aá]bado|[Dd]omingo) \d{1,2} de ([Ee]nero|[Ff]ebrero|[Mm]arzo|[Aa]bril|[Mm]ayo|[Jj]unio|[Jj]ulio|[Aa]gosto|[Ss]eptiembre|[Oo]ctubre|[Nn]oviembre|[Dd]iciembre) de \d{4}\n/gs, '') //eliminates page number and date
             .replace(
-                /([^\n])\s*(LEY PROVINCIAL|LEYES PROVINCIALES|DECRETO PROVINCIAL|DECRETOS PROVINCIALES|DECRETO SINTETIZADO|DECRETOS SINTETIZADOS|RESOLUCIONES|RESOLUCI[ÓO]N|RESOLUCI[ÓO]NES SINTETIZADAS|RESOLUCI[ÓO]N SINTETIZADA|DISPOSICI[ÓO]N|DISPOSICIONES|ACUERDO|ACUERDOS|DICT[ÁA]MEN|DICT[ÁA]MENES|DISPOSICI[ÓO]N SINTETIZADA|DISPOSICIONES SINTETIZADAS|REGISTRO DE\nPUBLICIDAD OFICIAL|DECLARACIONES|DECLARACI[ÓO]N|Secci[óo]n General)/g,
+                /([^\n])\s*^(LEY PROVINCIAL\n|LEYES PROVINCIALES\n|DECRETO PROVINCIAL\n|DECRETOS PROVINCIALES\n|DECRETO SINTETIZADO\n|DECRETOS SINTETIZADOS\n|RESOLUCIONES\n|RESOLUCI[ÓO]N\n|RESOLUCI[ÓO]NES SINTETIZADAS\n|RESOLUCI[ÓO]N SINTETIZADA\n|DISPOSICI[ÓO]N\n|DISPOSICIONES\n|ACUERDO\n|ACUERDOS\n|DICT[ÁA]MEN\n|DICT[ÁA]MENES\n|DISPOSICI[ÓO]N SINTETIZADA\n|DISPOSICIONES SINTETIZADAS\n|REGISTRO DE\nPUBLICIDAD OFICIAL\n|DECLARACIONES\n|DECLARACI[ÓO]N\n|Secci[óo]n General\n)/g,
                 (match, precedingText, sectionTitle) => `${precedingText}\n${sectionTitle}`)
             .replace(/RESOLUCIÓN N[º°] 171- EC- AÑO 2024([\s\S]*?)2.580,00\n?/gm, '')//eliminates last section of the pdf
             .replace(/((I: \d+-\d+-\d+ V: \d+-\d+-\d+)|P: \d+-\d+-\d+ y \d+-\d+-\d+|P: \d+-\d+-\d+) ([^\n]+)\n/gm, '$1\n$3\n'); //formats;
@@ -98,7 +98,11 @@ function processProvincialLaws(sectionContent) {
             while ((lawDecreeNumberMatch = lawDecreeNumberRegex.exec(lawContent)) !== null) {
                 laws.push({
                     title: 'Auditoría Legislativa - ' + 'Ley Provincial - ' + titleMatch[0].trim() + ' ' + lawDecreeNumberMatch[0].trim(),
-                    content: lawContent
+                    content: lawContent.replace(/(?<=[;\.]\n)\s*([A-ZÑ][a-zñü]|[A-ZÑ]+)[\s\S]*?(?=(?<=[;\.]\n)\s*([A-ZÑ][a-zñü]|[A-ZÑ]+))/gm, match => {
+                        return match.replace(/\n/g, ' ').replace(/\s+$/, '\n');
+                    })
+                        .replace(/([;\.]\n)/g, '$1\n')
+                        .trim()
                 });
             }
         }
@@ -115,7 +119,11 @@ function processProvincialDecrees(sectionContent) {
 
     let match;
     while ((match = provincialDecreeRegex.exec(sectionContent)) !== null) {
-        let decreeContent = match[0].trim();
+        let decreeContent = match[0].replace(/(?<=[;\.]\n)\s*([A-ZÑ][a-zñü]|[A-ZÑ]+)[\s\S]*?(?=(?<=[;\.]\n)\s*([A-ZÑ][a-zñü]|[A-ZÑ]+))/gm, match => {
+            return match.replace(/\n/g, ' ').replace(/\s+$/, '\n');
+        })
+            .replace(/([;\.]\n)/g, '$1\n')
+            .trim();
         let titleMatch;
 
         while ((titleMatch = decreeTitleRegex.exec(decreeContent)) !== null) {
