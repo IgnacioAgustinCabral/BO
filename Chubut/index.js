@@ -226,7 +226,11 @@ function processSynthesizedResolutions(sectionContent) {
         let match;
 
         while ((match = synthesizedResolutionRegex.exec(subsectionContent)) !== null) {
-            let synthesizedResolutionContent = match[0].trim();
+            let synthesizedResolutionContent = match[0].replace(/(?<=[;\.]\n)\s*([A-ZÑ][a-zñü]|[A-ZÑ]+)[\s\S]*?(?=(?<=[;\.]\n)\s*([A-ZÑ][a-zñü]|[A-ZÑ]+))/gm, match => {
+                return match.replace(/\n/g, ' ').replace(/\s+$/, '\n');
+            })
+                .replace(/([;\.]\n)/g, '$1\n')
+                .trim();
             let titleMatch;
 
             while ((titleMatch = resolutionRegex.exec(synthesizedResolutionContent)) !== null) {
@@ -247,11 +251,12 @@ function processResolutions(sectionContent) {
     const formattedContent = formatSection(sectionContent, regex);
     const replacements = {
         'HONORABLE LEGISLATURA DE LA\nPROVINCIA DEL CHUBUT\n': 'HONORABLE LEGISLATURA DE LA PROVINCIA DEL CHUBUT\n',
+        'HONORABLE LEGISLATURA DE\nLA PROVINCIA DEL CHUBUT\n': 'HONORABLE LEGISLATURA DE LA PROVINCIA DEL CHUBUT\n',
         'INSTITUTO PROVINCIAL DE LA VIVIENDA\nY DESARROLLO URBANO\n': 'INSTITUTO PROVINCIAL DE LA VIVIENDA Y DESARROLLO URBANO\n',
         'CONSEJO PROVINCIAL\nDE RESPONSABILIDAD FISCAL\n': 'CONSEJO PROVINCIAL DE RESPONSABILIDAD FISCAL\n',
     };
     const normalizedContent = replaceSubsectionTitles(formattedContent, replacements);
-    const subsectionsRegex = /(INSTITUTO PROVINCIAL DE LA VIVIENDA Y DESARROLLO URBANO\n|CONSEJO PROVINCIAL DE RESPONSABILIDAD FISCAL\n|HONORABLE LEGISLATURA DE LA PROVINCIA DEL CHUBUT\n|PODER JUDICIAL\n|TRIBUNAL DE CUENTAS\n|INSTITUTO PROVINCIAL DEL AGUA\n|DIRECCI[ÓO]N GENERAL DE RENTAS\n)([\s\S]*?)(?=(?!\1)(INSTITUTO PROVINCIAL DE LA VIVIENDA Y DESARROLLO URBANO\n|CONSEJO PROVINCIAL DE RESPONSABILIDAD FISCAL\n|HONORABLE LEGISLATURA DE LA PROVINCIA DEL CHUBUT\n|PODER JUDICIAL\n|TRIBUNAL DE CUENTAS\n|INSTITUTO PROVINCIAL DEL AGUA\n|DIRECCI[ÓO]N GENERAL DE RENTAS\n|$))/gs;
+    const subsectionsRegex = /(INSTITUTO PROVINCIAL DE LA VIVIENDA Y DESARROLLO URBANO\n|CONSEJO PROVINCIAL DE RESPONSABILIDAD FISCAL\n|HONORABLE LEGISLATURA DE LA PROVINCIA DEL CHUBUT\n|PODER JUDICIAL\n|TRIBUNAL DE CUENTAS\n|INSTITUTO PROVINCIAL DEL AGUA\n|DIRECCI[ÓO]N GENERAL DE RENTAS\n|INSPECCI[OÓ]N GENERAL DE JUSTICIA\n)([\s\S]*?)(?=(?!\1)(INSTITUTO PROVINCIAL DE LA VIVIENDA Y DESARROLLO URBANO\n|CONSEJO PROVINCIAL DE RESPONSABILIDAD FISCAL\n|HONORABLE LEGISLATURA DE LA PROVINCIA DEL CHUBUT\n|PODER JUDICIAL\n|TRIBUNAL DE CUENTAS\n|INSTITUTO PROVINCIAL DEL AGUA\n|DIRECCI[ÓO]N GENERAL DE RENTAS\n|INSPECCI[OÓ]N GENERAL DE JUSTICIA\n|$))/gs;
     const subsections = getSubsections(normalizedContent, subsectionsRegex);
 
     const poderJudicialRegex = /RESOLUCIÓN ADMINISTRATIVA GENERAL\nN[º°] \d+\/\d+\n|RESOLUCIÓN ADMINISTRATIVA\nGENERAL N[º°] \d+\/\d+\n|RESOLUCIÓN DE SUPERINTENDENCIA\nADMINISTRATIVA N[º°]\d+\/\d+-(\w+)\n/gs;
@@ -267,15 +272,20 @@ function processResolutions(sectionContent) {
     });
 
     const resolutions = [];
-    const resolutionsRegex = /(RESOLUCIÓN DE SUPERINTENDENCIA ADMINISTRATIVA N[º°]\d+\/\d+-(\w+)\n|RESOLUCI[ÓO]N ADMINISTRATIVA GENERAL N[º°] \d+\/\d+\n|RESOLUCI[ÓO]N DEL TRIBUNAL N[º°] \d+\/\d+\n|RESOLUCI[ÓO]N N[º°]\d+\/\d+-HL(,)?\n|RESOLUCI[ÓO]N N[º°]\d+\/\d+(-?\.?)?\n|Resoluci[oó]n N[º°] \d+\n|Res\.? N[º°] \d+\n|Res\.? N[º°]\d+\n)([\s\S]*?)(?=(?!\1)(RESOLUCIÓN DE SUPERINTENDENCIA ADMINISTRATIVA N[º°]\d+\/\d+-(\w+)\n|RESOLUCI[ÓO]N ADMINISTRATIVA GENERAL N[º°] \d+\/\d+\n|RESOLUCI[ÓO]N DEL TRIBUNAL N[º°] \d+\/\d+\n|RESOLUCI[ÓO]N N[º°]\d+\/\d+-HL\n|Resoluci[oó]n N[º°] \d+\n|Res\.? N[º°] \d+\n|RESOLUCI[ÓO]N N[º°]\d+\/\d+(-?\.?)?\n|Res\.? N[º°]\d+\n|$))/gs;
-    const resolutionRegex = /RESOLUCIÓN DE SUPERINTENDENCIA ADMINISTRATIVA N[º°]\d+\/\d+-(\w+)\n|RESOLUCI[ÓO]N ADMINISTRATIVA GENERAL N[º°] \d+\/\d+\n|RESOLUCI[ÓO]N DEL TRIBUNAL N[º°] \d+\/\d+\n|RESOLUCI[ÓO]N N[º°]\d+\/\d+-HL\n|RESOLUCI[ÓO]N N[º°]\d+\/\d+\n|Resoluci[oó]n N[º°] \d+\n|Res\.? N[º°] \d+\n|RESOLUCI[ÓO]N N[º°]\d+\/\d+|Res\.? N[º°]\d+\n/gs;
+    const resolutionsRegex = /(RESOLUCIÓN DE SUPERINTENDENCIA ADMINISTRATIVA N[º°]\d+\/\d+-(\w+)\n|RESOLUCI[ÓO]N ADMINISTRATIVA GENERAL N[º°] \d+\/\d+\n|RESOLUCI[ÓO]N DEL TRIBUNAL N[º°] \d+\/\d+\n|RESOLUCI[ÓO]N N[º°] ?\d+\/\d+-HL(,)?\n|RESOLUCI[ÓO]N N[º°]\d+\/\d+(-?\.?)?\n|Resoluci[oó]n N[º°] \d+\n|Res\.? N[º°] \d+\n|Res\.? N[º°]\d+\n)([\s\S]*?)(?=(?!\1)(RESOLUCIÓN DE SUPERINTENDENCIA ADMINISTRATIVA N[º°]\d+\/\d+-(\w+)\n|RESOLUCI[ÓO]N ADMINISTRATIVA GENERAL N[º°] \d+\/\d+\n|RESOLUCI[ÓO]N DEL TRIBUNAL N[º°] \d+\/\d+\n|RESOLUCI[ÓO]N N[º°] ?\d+\/\d+-HL(,)?\n|RESOLUCI[ÓO]N N[º°]\d+\/\d+(-?\.?)?\n|Resoluci[oó]n N[º°] \d+\n|Res\.? N[º°] \d+\n|Res\.? N[º°]\d+\n|$))/gs;
+    const resolutionRegex = /RESOLUCIÓN DE SUPERINTENDENCIA ADMINISTRATIVA N[º°]\d+\/\d+-(\w+)\n|RESOLUCI[ÓO]N ADMINISTRATIVA GENERAL N[º°] \d+\/\d+\n|RESOLUCI[ÓO]N DEL TRIBUNAL N[º°] \d+\/\d+\n|RESOLUCI[ÓO]N N[º°] ?\d+\/\d+-HL(,)?\n|RESOLUCI[ÓO]N N[º°]\d+\/\d+(-?\.?)?\n|Resoluci[oó]n N[º°] \d+\n|Res\.? N[º°] \d+\n|Res\.? N[º°]\d+\n/gs;
 
     subsections.forEach(subsection => {
         const {subsectionName, subsectionContent} = subsection;
         let match;
 
         while ((match = resolutionsRegex.exec(subsectionContent)) !== null) {
-            let resolutionContent = match[0].trim();
+            let resolutionContent = match[0].replace(/(?<=[;\.]\n)\s*([A-ZÑ][a-zñü]|[A-ZÑ]+)[\s\S]*?(?=(?<=[;\.]\n)\s*([A-ZÑ][a-zñü]|[A-ZÑ]+))/gm, match => {
+                return match.replace(/\n/g, ' ').replace(/\s+$/, '\n');
+            })
+                .replace(/([;\.]\n)/g, '$1\n')
+                .trim();
+
             let titleMatch;
 
             while ((titleMatch = resolutionRegex.exec(resolutionContent)) !== null) {
@@ -437,7 +447,7 @@ function processDispositions(sectionContent) {
                 .replace(/(Artículo\s+\d+[°º]\.-\s.*?)([\s\S]*?)(?=\s*Artículo\s+\d+[°º]\.-|$)/g, '$1$2\n\n')
                 .replace(/([.,] )([a-z]\))/g, '$1\n$2')
                 .replace(/(\s)(\d+\.-)/g, '$1\n$2')
-            fs.writeFileSync('aber.txt', dispositionContent)
+
             while ((titleMatch = dispositionRegex.exec(dispositionContent)) !== null) {
                 dispositions.push({
                     title: 'Auditoría Legislativa - ' + 'Disposición - ' + titleMatch[0].trim(),
