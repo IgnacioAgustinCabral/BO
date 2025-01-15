@@ -89,7 +89,8 @@ module.exports = async function parseSantaCruzPDF(pdfBuffer) {
 }
 
 function processLaws(sectionName, content) {
-    content = content.replace(/__+\n/g, ''); //strip underscores
+    content = content.replace(/__+\n/g, '') //strip underscores
+        .replace(/(Art[íi]culo ?\d+)[º°]?\.[-–]/gm, '$1')
     const regex1 = /(^LEY N[º°] \d+\n)([\s\S]*?)(?=(^LEY N[º°] \d+\n))/gm;
     let match;
     const laws = [];
@@ -97,7 +98,11 @@ function processLaws(sectionName, content) {
     while ((match = regex1.exec(content)) !== null) {
         const law = {
             title: 'Auditoría Legislativa - ' + 'LEYES - ' + match[1].trim(),
-            content: match[2].trim(),
+            content: match[2].replace(/^(?:<strong>)?([A-ZÑ][a-zñü]|[A-Z]+|[0-9º°]+)(?:<\/strong>)?[\s\S]*?(\.[-–]|;)/gm, match => {
+                return match.replace(/(?<!:)\n/g, ' ');
+            })
+                .replace(/(\.[-–]\n|;\n)/g, '$1\n')
+                .trim(),
         };
 
         laws.push(law);
@@ -111,7 +116,11 @@ function processLaws(sectionName, content) {
     if (lastLaw) {
         const law = {
             title: 'Auditoría Legislativa - ' + `${sectionName} - ` + lastLaw[1].trim(),
-            content: lastLaw[2].trim(),
+            content: lastLaw[2].replace(/^(?:<strong>)?([A-ZÑ][a-zñü]|[A-Z]+|[0-9º°]+)(?:<\/strong>)?[\s\S]*?(\.[-–]|;)/gm, match => {
+                return match.replace(/(?<!:)\n/g, ' ');
+            })
+                .replace(/(\.[-–]\n|;\n)/g, '$1\n')
+                .trim(),
         };
         laws.push(law);
     }
@@ -128,7 +137,11 @@ function processDecrees(sectionName, content) {
     while ((match = regex1.exec(content)) !== null) {
         const decree = {
             title: 'Auditoría Legislativa - ' + `${sectionName} - ` + match[1].trim(),
-            content: match[2].trim(),
+            content: match[2].replace(/^(?:<strong>)?([A-ZÑ][a-zñü]|[A-Z]+|[0-9º°]+)(?:<\/strong>)?[\s\S]*?(\.[-–]|;)/gm, match => {
+                return match.replace(/(?<!:)\n/g, ' ');
+            })
+                .replace(/(\.[-–]\n|;\n)/g, '$1\n')
+                .trim(),
         };
 
         decrees.push(decree);
@@ -142,7 +155,11 @@ function processDecrees(sectionName, content) {
     if (lastDecree) {
         const decree = {
             title: 'Auditoría Legislativa - ' + `${sectionName} - ` + lastDecree[1].trim(),
-            content: lastDecree[2].trim(),
+            content: lastDecree[2].replace(/^(?:<strong>)?([A-ZÑ][a-zñü]|[A-Z]+|[0-9º°]+)(?:<\/strong>)?[\s\S]*?(\.[-–]|;)/gm, match => {
+                return match.replace(/(?<!:)\n/g, ' ');
+            })
+                .replace(/(\.[-–]\n|;\n)/g, '$1\n')
+                .trim(),
         };
         decrees.push(decree);
     }
@@ -151,7 +168,8 @@ function processDecrees(sectionName, content) {
 }
 
 function processResolutions(sectionName, content) {
-    content = content.replace(/__+\n/g, ''); //strip underscores
+    content = content.replace(/__+\n/g, '') //strip underscores
+        .replace(/(Art[íi]culo ?\d+)[º°]\.[-–]/gm, '$1')
     const regex1 = /(^RESOLUCI[ÓO]N N[º°] \d+\n|^RESOLUCI[ÓO]N N[º°] \d+\/\d+\/\w+\n)([\s\S]*?)(?=(^RESOLUCI[ÓO]N N[º°] \d+\n|^RESOLUCI[ÓO]N N[º°] \d+\/\d+\/\w+\n))/gm
     let match;
     const resolutions = [];
@@ -159,7 +177,11 @@ function processResolutions(sectionName, content) {
     while ((match = regex1.exec(content)) !== null) {
         const resolution = {
             title: 'Auditoría Legislativa - ' + `${sectionName} - ` + match[1].trim(),
-            content: match[2].trim(),
+            content: match[2].replace(/^(?:<strong>)?([A-ZÑ][a-zñü]|[A-Z]+|[0-9º°]+)(?:<\/strong>)?[\s\S]*?(\.[-–]|;)/gm, match => {
+                return match.replace(/(?<!:)\n/g, ' ');
+            })
+                .replace(/(\.[-–]\n|;\n)/g, '$1\n')
+                .trim(),
         };
 
         resolutions.push(resolution);
@@ -173,7 +195,11 @@ function processResolutions(sectionName, content) {
     if (lastResolution) {
         const resolution = {
             title: 'Auditoría Legislativa - ' + `${sectionName} - ` + lastResolution[1].trim(),
-            content: lastResolution[2].trim(),
+            content: lastResolution[2].replace(/^(?:<strong>)?([A-ZÑ][a-zñü]|[A-Z]+|[0-9º°]+)(?:<\/strong>)?[\s\S]*?(\.[-–]|;)/gm, match => {
+                return match.replace(/(?<!:)\n/g, ' ');
+            })
+                .replace(/(\.[-–]\n|;\n)/g, '$1\n')
+                .trim(),
         };
         resolutions.push(resolution);
     }
@@ -190,7 +216,11 @@ function processDispositions(sectionName, content) {
     while ((match = regex1.exec(content)) !== null) {
         const disposition = {
             title: 'Auditoría Legislativa - ' + `${sectionName} - ` + match[1].trim(),
-            content: match[2].trim(),
+            content: match[2].replace(/^(?:<strong>)?([A-ZÑ][a-zñü]|[A-Z]+|[0-9º°]+)(?:<\/strong>)?[\s\S]*?(\.[-–]|;)/gm, match => {
+                return match.replace(/(?<!:)\n/g, ' ');
+            })
+                .replace(/(\.[-–]\n|;\n)/g, '$1\n')
+                .trim(),
         };
 
         dispositions.push(disposition);
@@ -204,7 +234,11 @@ function processDispositions(sectionName, content) {
     if (lastDisposition) {
         const disposition = {
             title: 'Auditoría Legislativa - ' + `${sectionName} - ` + lastDisposition[1].trim(),
-            content: lastDisposition[2].trim(),
+            content: lastDisposition[2].replace(/^(?:<strong>)?([A-ZÑ][a-zñü]|[A-Z]+|[0-9º°]+)(?:<\/strong>)?[\s\S]*?(\.[-–]|;)/gm, match => {
+                return match.replace(/(?<!:)\n/g, ' ');
+            })
+                .replace(/(\.[-–]\n|;\n)/g, '$1\n')
+                .trim(),
         };
         dispositions.push(disposition);
     }
@@ -230,7 +264,11 @@ function processEdicts(sectionName, content) {
     while ((match = regex1.exec(content)) !== null) {
         const edict = {
             title: 'Auditoría Legislativa - ' + 'EDICTOS - ' + match[1].replace(/\n/, ' ').trim(),
-            content: match[3].trim(),
+            content: match[3].replace(/^(?:<strong>)?([A-ZÑ][a-zñü]|[A-Z]+|[0-9º°]+)(?:<\/strong>)?[\s\S]*?(\.[-–]|;)/gm, match => {
+                return match.replace(/(?<!:)\n/g, ' ');
+            })
+                .replace(/(\.[-–]\n|;\n)/g, '$1\n')
+                .trim(),
         };
 
         edicts.push(edict);
@@ -244,7 +282,11 @@ function processEdicts(sectionName, content) {
     if (lastEdict) {
         const edict = {
             title: 'Auditoría Legislativa - ' + `${sectionName} - ` + lastEdict[1].replace(/\n/, ' ').trim(),
-            content: lastEdict[3].trim(),
+            content: lastEdict[3].replace(/^(?:<strong>)?([A-ZÑ][a-zñü]|[A-Z]+|[0-9º°]+)(?:<\/strong>)?[\s\S]*?(\.[-–]|;)/gm, match => {
+                return match.replace(/(?<!:)\n/g, ' ');
+            })
+                .replace(/(\.[-–]\n|;\n)/g, '$1\n')
+                .trim(),
         };
         edicts.push(edict);
     }
@@ -269,7 +311,10 @@ function processAvisos(sectionName, content) {
     while ((match = regex1.exec(content)) !== null) {
         const aviso = {
             title: 'Auditoría Legislativa - ' + `${sectionName} - ` + match[1].replace(/\n/, ' ').trim(),
-            content: match[2].trim(),
+            content: match[2].replace(/^(?:<strong>)?([A-ZÑ][a-zñü]|[A-Z]+|[0-9º°]+)(?:<\/strong>)?[\s\S]*?(\.[-–]|;)/gm, match => {
+                return match.replace(/(?<!:)\n/g, ' ');
+            })
+                .replace(/(\.[-–]\n|;\n)/g, '$1\n').trim(),
         };
 
         avisos.push(aviso);
@@ -283,7 +328,11 @@ function processAvisos(sectionName, content) {
     if (lastAviso) {
         const aviso = {
             title: 'Auditoría Legislativa - ' + `${sectionName} - ` + lastAviso[1].replace(/\n/, ' ').trim(),
-            content: lastAviso[2].trim(),
+            content: lastAviso[2].replace(/^(?:<strong>)?([A-ZÑ][a-zñü]|[A-Z]+|[0-9º°]+)(?:<\/strong>)?[\s\S]*?(\.[-–]|;)/gm, match => {
+                return match.replace(/(?<!:)\n/g, ' ');
+            })
+                .replace(/(\.[-–]\n|;\n)/g, '$1\n')
+                .trim(),
         };
         avisos.push(aviso);
     }
@@ -310,7 +359,11 @@ function processCalls(sectionName, content) {
         let title = match[1].replace('\n', ' ').trim();
         const call = {
             title: 'Auditoría Legislativa - ' + `${sectionName} - ` + title,
-            content: match[2].trim(),
+            content: match[2].replace(/^(?:<strong>)?([A-ZÑ][a-zñü]|[A-Z]+|[0-9º°]+)(?:<\/strong>)?[\s\S]*?(\.[-–]|;)/gm, match => {
+                return match.replace(/(?<!:)\n/g, ' ');
+            })
+                .replace(/(\.[-–]\n|;\n)/g, '$1\n')
+                .trim(),
         };
 
         calls.push(call);
@@ -326,7 +379,11 @@ function processCalls(sectionName, content) {
         let title = lastCall[1].replace('\n', ' ').trim();
         const call = {
             title: 'Auditoría Legislativa - ' + `${sectionName} - ` + title,
-            content: lastCall[2].trim(),
+            content: lastCall[2].replace(/^(?:<strong>)?([A-ZÑ][a-zñü]|[A-Z]+|[0-9º°]+)(?:<\/strong>)?[\s\S]*?(\.[-–]|;)/gm, match => {
+                return match.replace(/(?<!:)\n/g, ' ');
+            })
+                .replace(/(\.[-–]\n|;\n)/g, '$1\n')
+                .trim(),
         };
         calls.push(call);
     }
@@ -343,7 +400,11 @@ function processDeclarations(sectionName, content) {
     while ((match = regex1.exec(content)) !== null) {
         const declaration = {
             title: 'Auditoría Legislativa - ' + `${sectionName} - ` + match[1].trim(),
-            content: match[2].trim(),
+            content: match[2].replace(/^(?:<strong>)?([A-ZÑ][a-zñü]|[A-Z]+|[0-9º°]+)(?:<\/strong>)?[\s\S]*?(\.[-–]|;)/gm, match => {
+                return match.replace(/(?<!:)\n/g, ' ');
+            })
+                .replace(/(\.[-–]\n|;\n)/g, '$1\n')
+                .trim(),
         };
 
         declarations.push(declaration);
@@ -357,7 +418,11 @@ function processDeclarations(sectionName, content) {
     if (lastDeclaration) {
         const declaration = {
             title: 'Auditoría Legislativa - ' + `${sectionName} - ` + lastDeclaration[1].trim(),
-            content: lastDeclaration[2].trim(),
+            content: lastDeclaration[2].replace(/^(?:<strong>)?([A-ZÑ][a-zñü]|[A-Z]+|[0-9º°]+)(?:<\/strong>)?[\s\S]*?(\.[-–]|;)/gm, match => {
+                return match.replace(/(?<!:)\n/g, ' ');
+            })
+                .replace(/(\.[-–]\n|;\n)/g, '$1\n')
+                .trim(),
         };
         declarations.push(declaration);
     }
