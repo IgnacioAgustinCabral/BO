@@ -45,7 +45,7 @@ module.exports = async function parseCaletaOliviaPDF(pdfBuffer) {
             decrees.push(match);
             return '';
         })
-        .replace(/(RESOLUCI[OÓ]N N[º°] [\s\S]*?\.[-–]\n)([\s\S]*?(Sra. Eliana Y. LABADO|Sra. Eliana LABADO|Sra. Eliana LAVADO|Sra. Eliana Y. LAVADO))/gm, (match) => {
+        .replace(/(RESOLUCI[OÓ]N(ES)? N[º°] [\s\S]*?\.[-–]\n)([\s\S]*?(Sra. Eliana Y. LABADO|Sra. Eliana LABADO|Sra. Eliana LAVADO|Sra. Eliana Y. LAVADO))/gm, (match) => {
             resolutionsRBT.push(match);
             return '';
         })
@@ -106,7 +106,7 @@ function extractEdicts(edictsText) {
 
 function extractResolutionsRBT(resolutionsRBTText) {
     let resolutionsRBT = [];
-    const resolutionRBTRegex = /RESOLUCI[OÓ]N N[º°] \d+/;
+    const resolutionRBTRegex = /RESOLUCI[OÓ]N(ES)? N[º°] \d+/;
     resolutionsRBTText.forEach(resolutionRBT => {
         const resolutionRBTTitle = resolutionRBT.match(resolutionRBTRegex);
         resolutionsRBT.push({
