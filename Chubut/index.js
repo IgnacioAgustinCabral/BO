@@ -82,7 +82,7 @@ module.exports = async function parseChubutPDF(pdfBuffer) {
 }
 
 function processProvincialLaws(sectionContent) {
-    const lawRegex = /(?:(?!Lic\. IGNACIO AGUSTÍN TORRES\nDr\. VICTORIANO ERASO PARODI).)+Lic\. IGNACIO AGUSTÍN TORRES\nDr\. VICTORIANO ERASO PARODI/gs;
+    const lawRegex = /(?:(?!Lic\. IGNACIO AGUSTÍN TORRES\nDr\. VICTORIANO ERASO PARODI?).)+Lic\. IGNACIO AGUSTÍN TORRES\nDr\. VICTORIANO ERASO PARODI?/gs;
     const lawTitleRegex = /^LEY [IVXLCDM]+ N[º°] \d+\n/gm;
     const lawDecreeNumberRegex = /Decreto N[º°] \d+\n/gm;
     const laws = [];
@@ -128,7 +128,7 @@ function processProvincialDecrees(sectionContent) {
 
         while ((titleMatch = decreeTitleRegex.exec(decreeContent)) !== null) {
             decrees.push({
-                title: 'Auditoría Legislativa - ' + 'Decreto Pronvincial - ' + titleMatch[0].trim(),
+                title: 'Auditoría Legislativa - ' + 'Decreto Provincial - ' + titleMatch[0].trim(),
                 content: decreeContent
             });
         }

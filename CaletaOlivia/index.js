@@ -69,9 +69,6 @@ function extractOrdenanzas(ordenanzasText) {
     const ordenanzaRegex = /ORDENANZA (MUNICIPAL )?N[º°] ?\d+/;
     ordenanzasText.forEach(ordenanza => {
         const ordenanzaTitle = ordenanza.match(ordenanzaRegex);
-        console.log("#####")
-        console.log(ordenanzaTitle+'ACA');
-        console.log("#####")
         ordenanzas.push({
             title: `Auditoría Legislativa - ORDENANZAS MUNICIPALES - ${ordenanzaTitle[0].trim()}`,
             content: ordenanza.trim()
