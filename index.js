@@ -3,26 +3,30 @@ const express = require('express');
 const parseChubutPDF = require('./Chubut/index.js');
 const parseSantaCruzPDF = require('./SantaCruz/index.js');
 const parseCaletaOliviaPDF = require('./CaletaOlivia/index.js');
+const parseComodoroRivadaviaPDF = require('./ComodoroRivadavia/index.js');
 const port = 4000;
 const app = express();
+
+const parsers = {
+    '621': parseChubutPDF,
+    '620': parseSantaCruzPDF,
+    '624': parseCaletaOliviaPDF,
+    '672': parseComodoroRivadaviaPDF
+};
 
 app.get('/process-bulletin', async (req, res) => {
     const {url, sources_id} = req.query;
 
     try {
-        const pdfBuffer = await downloadPDF(url);
-        let data;
-        if (sources_id === '621') {
-            data = await parseChubutPDF(pdfBuffer);
-        } else if (sources_id === '620') {
-            data = await parseSantaCruzPDF(pdfBuffer);
-        } else if (sources_id === '624') {
-            data = await parseCaletaOliviaPDF(pdfBuffer);
-        } else {
-            data = {error: 'No parser for this source'};
-        }
+        const parsePDF = parsers[sources_id];
 
-        res.json(data);
+        if (parsePDF) {
+            const pdfBuffer = await downloadPDF(url);
+            const data = await parsePDF(pdfBuffer);
+            res.json(data);
+        } else {
+            res.json({error: 'No parser for this source'});
+        }
     } catch (error) {
         res.json(null);
         console.log(error);
