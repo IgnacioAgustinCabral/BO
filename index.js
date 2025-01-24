@@ -9,10 +9,10 @@ const puppeteer = require('puppeteer');
 const app = express();
 
 const parsers = {
-    '621': parseChubutPDF,
     '620': parseSantaCruzPDF,
+    '621': parseChubutPDF,
     '624': parseCaletaOliviaPDF,
-    '672': parseComodoroRivadaviaPDF
+    '628': parseComodoroRivadaviaPDF
 };
 
 app.get('/process-bulletin', async (req, res) => {
@@ -49,7 +49,7 @@ app.get('/extract-links', async (req, res) => {
         await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36');
         await page.goto(url);
 
-        if (sources_id === '672') {
+        if (sources_id === '628') {
             await page.waitForSelector('vaadin-grid-cell-content');
             await page.evaluate(() => {
                 const element = document.querySelector('vaadin-grid-cell-content');
