@@ -94,11 +94,29 @@ function processEdictosLeyPierri(text) {
     return edicts;
 }
 
+function processEdictosIPPV(text) {
+    const edictosIPPVRegex = /([\s\S]+?)(?=-–—•—–-|$)/g;
+
+    let edicts = [];
+    let match;
+
+    while ((match = edictosIPPVRegex.exec(text)) !== null) {
+        let edictContent = match[0].replace(/-–—•—–-/g, '').trim();
+        edicts.push({
+            title: `Auditoría Legislativa - EDICTOS I.P.P.V. - EDICTO`,
+            content: edictContent
+        });
+    }
+
+    return edicts;
+}
+
 module.exports = {
     getSections,
     processResolutions,
     processLicitaciones,
     processConcursos,
     processComunicados,
-    processEdictosLeyPierri
+    processEdictosLeyPierri,
+    processEdictosIPPV
 };
