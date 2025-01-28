@@ -6,7 +6,8 @@ const {
     processConcursos,
     processComunicados,
     processEdictosLeyPierri,
-    processEdictosIPPV
+    processEdictosIPPV,
+    processNomina
 } = require('./utils/processSeccionAdministrativa.js');
 module.exports = async function parseRioNegroPDF(pdfBuffer) {
     const pdfData = await pdf(pdfBuffer);
@@ -29,7 +30,7 @@ module.exports = async function parseRioNegroPDF(pdfBuffer) {
         // 'EDICTOS DE MENSURA': 'Edictos de Mensura',
         // 'EDICTO DPA': 'Edicto Dpa',
         'EDICTOS I.P.P.V.': processEdictosIPPV,
-        // 'NÓMINA PREADJUDICATARIOS DE VIVIENDAS': 'Nómina Preadjudicatarios de Viviendas'
+        'NÓMINA PREADJUDICATARIOS DE VIVIENDAS': processNomina
     };
 
     text = text.replace(/Firmado Digitalmente por [\s\S]*?$/gm, '') //eliminates page header

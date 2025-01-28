@@ -111,6 +111,23 @@ function processEdictosIPPV(text) {
     return edicts;
 }
 
+function processNomina(text) {
+    const nominaRegex = /([\s\S]+?)(?=-–—•—–-|$)/g;
+
+    let nominas = [];
+    let match;
+
+    while ((match = nominaRegex.exec(text)) !== null) {
+        let edictContent = match[0].replace(/-–—•—–-/g, '').trim();
+        nominas.push({
+            title: `Auditoría Legislativa - NÓMINA PREADJUDICATARIOS DE VIVIENDAS - NÓMINA`,
+            content: edictContent
+        });
+    }
+
+    return nominas;
+}
+
 module.exports = {
     getSections,
     processResolutions,
@@ -118,5 +135,6 @@ module.exports = {
     processConcursos,
     processComunicados,
     processEdictosLeyPierri,
-    processEdictosIPPV
+    processEdictosIPPV,
+    processNomina
 };
