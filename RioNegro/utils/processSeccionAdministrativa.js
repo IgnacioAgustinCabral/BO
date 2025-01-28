@@ -62,9 +62,25 @@ function processConcursos(text) {
     return concursos;
 }
 
+function processComunicados(text) {
+    const comunicadosRegex = /([\s\S]+?)(?=–—oOo—–|$)/g;
+
+    let comunicados = [];
+    let match;
+    while ((match = comunicadosRegex.exec(text)) !== null) {
+        comunicados.push({
+            title: `Auditoría Legislativa - COMUNICADOS - COMUNICADO`,
+            content: match[0]
+        });
+    }
+
+    return comunicados;
+}
+
 module.exports = {
     getSections,
     processResolutions,
     processLicitaciones,
-    processConcursos
+    processConcursos,
+    processComunicados
 };

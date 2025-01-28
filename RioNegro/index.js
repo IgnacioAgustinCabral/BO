@@ -1,5 +1,11 @@
 const pdf = require("pdf-parse");
-const {getSections, processResolutions, processLicitaciones,processConcursos} = require('./utils/processSeccionAdministrativa.js');
+const {
+    getSections,
+    processResolutions,
+    processLicitaciones,
+    processConcursos,
+    processComunicados
+} = require('./utils/processSeccionAdministrativa.js');
 module.exports = async function parseRioNegroPDF(pdfBuffer) {
     const pdfData = await pdf(pdfBuffer);
     let text = pdfData.text;
@@ -13,7 +19,7 @@ module.exports = async function parseRioNegroPDF(pdfBuffer) {
         // 'DISPOSICIÓN': 'Disposición',
         'LICITACIONES': processLicitaciones,
         'CONCURSOS': processConcursos,
-        // 'COMUNICADOS': 'Comunicados',
+        'COMUNICADOS': processComunicados,
         // 'EDICTOS LEY PIERRI': 'Edictos Ley Pierri',
         // 'EDICTOS NOTIFICATORIOS': 'Edictos Notificatorios',
         // 'REGISTRO REDAM': 'Registro Redam',
