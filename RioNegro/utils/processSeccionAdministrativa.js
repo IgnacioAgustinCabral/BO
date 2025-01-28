@@ -144,6 +144,23 @@ function processDecrees(text) {
     return decrees;
 }
 
+function processSynthesizedDecrees(text){
+    const synthesizedDecreesRegex = /DECRETO N[º°] \d+[\s\S]*?(?=(DECRETO N[º°] \d+|$))/g;
+
+    let synthesizedDecrees = [];
+    let match;
+    while ((match = synthesizedDecreesRegex.exec(text)) !== null) {
+        let decreeContent = match[0].trim();
+        let decreeNumber = decreeContent.match(/DECRETO N[º°] (\d+)/)[1];
+        synthesizedDecrees.push({
+            title: `Auditoría Legislativa - DECRETOS SINTETIZADOS - DECRETO Nº ${decreeNumber}`,
+            content: decreeContent
+        });
+    }
+
+    return synthesizedDecrees;
+}
+
 module.exports = {
     getSections,
     processResolutions,
@@ -153,5 +170,6 @@ module.exports = {
     processEdictosLeyPierri,
     processEdictosIPPV,
     processNomina,
-    processDecrees
+    processDecrees,
+    processSynthesizedDecrees
 };

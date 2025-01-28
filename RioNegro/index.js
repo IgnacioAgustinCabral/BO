@@ -8,7 +8,8 @@ const {
     processEdictosLeyPierri,
     processEdictosIPPV,
     processNomina,
-    processDecrees
+    processDecrees,
+    processSynthesizedDecrees
 } = require('./utils/processSeccionAdministrativa.js');
 module.exports = async function parseRioNegroPDF(pdfBuffer) {
     const pdfData = await pdf(pdfBuffer);
@@ -16,7 +17,7 @@ module.exports = async function parseRioNegroPDF(pdfBuffer) {
     const administrativeSectionsNames = {
         // 'LEY': 'Ley',
         'DECRETOS': processDecrees,
-        // 'DECRETOS SINTETIZADOS': 'Decretos Sintetizados',
+        'DECRETOS SINTETIZADOS': processSynthesizedDecrees,
         'RESOLUCIONES': processResolutions,
         // 'FALLOS': 'Fallos',
         // 'DISPOSICIONES': 'Disposiciones',
