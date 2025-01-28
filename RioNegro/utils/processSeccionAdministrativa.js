@@ -23,14 +23,32 @@ function processResolutions(text) {
         resolutions.push({
             title: `Auditoría Legislativa - RESOLUCIONES - RESOLUCIÓN`,
             content: resolutionContent
-        })
+        });
     }
 
     return resolutions;
 }
 
+function processLicitaciones(text) {
+    const licitacionRegex = /([\s\S]+?)(?=–—oOo—–|$)/g;
+
+    let licitaciones = [];
+    let match;
+
+    while ((match = licitacionRegex.exec(text)) !== null) {
+        let licitacionContent = match[0].replace(/–—oOo—–/g, '').trim();
+        licitaciones.push({
+            title: `Auditoría Legislativa - LICITACIONES - LICITACIÓN`,
+            content: licitacionContent
+        });
+    }
+
+    return licitaciones;
+}
+
 
 module.exports = {
     getSections,
-    processResolutions
+    processResolutions,
+    processLicitaciones
 };
