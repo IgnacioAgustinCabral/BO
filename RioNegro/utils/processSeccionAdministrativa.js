@@ -161,6 +161,21 @@ function processSynthesizedDecrees(text){
     return synthesizedDecrees;
 }
 
+function processDisposiciones(text){
+    const disposicionesRegex = /([\s\S]+?)(?=–—oOo—–|$)/g;
+
+    let disposiciones = [];
+    let match;
+    while ((match = disposicionesRegex.exec(text)) !== null) {
+        let dispositionContent = match[0].replace(/–—oOo—–/g, '').trim();
+        disposiciones.push({
+            title: `Auditoría Legislativa - DISPOSICIONES - DISPOSICIÓN`,
+            content: dispositionContent
+        });
+    }
+
+    return disposiciones;
+}
 module.exports = {
     getSections,
     processResolutions,
@@ -171,5 +186,6 @@ module.exports = {
     processEdictosIPPV,
     processNomina,
     processDecrees,
-    processSynthesizedDecrees
+    processSynthesizedDecrees,
+    processDisposiciones
 };
