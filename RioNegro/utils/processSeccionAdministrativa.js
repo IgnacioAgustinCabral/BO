@@ -46,9 +46,25 @@ function processLicitaciones(text) {
     return licitaciones;
 }
 
+function processConcursos(text) {
+    const concursosRegex = /([\s\S]+?)(?=Provincia de R[ií]o Negro\n|$)/g;
+
+    let concursos = [];
+    let match;
+
+    while ((match = concursosRegex.exec(text)) !== null) {
+        concursos.push({
+            title: `Auditoría Legislativa - CONCURSOS - CONCURSO`,
+            content: match[0]
+        });
+    }
+
+    return concursos;
+}
 
 module.exports = {
     getSections,
     processResolutions,
-    processLicitaciones
+    processLicitaciones,
+    processConcursos
 };
