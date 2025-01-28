@@ -1,11 +1,10 @@
 function getSections(text) {
     let sections = [];
-    const sectionsRegex = /(LEY|DECRETOS|DECRETOS SINTETIZADOS|RESOLUCIONES|FALLOS|DISPOSICIONES|DISPOSICIÓN|LICITACIONES|CONCURSOS|COMUNICADOS|EDICTOS LEY PIERRI|EDICTOS NOTIFICATORIOS|REGISTRO REDAM|EDICTOS DE MINERÍA|EDICTOS DE MENSURA|EDICTO DPA|EDICTOS I\.P\.P\.V\.|NÓMINA PREADJUDICATARIOS DE VIVIENDAS)([\s\S]*?)(?=(LEY|DECRETOS|DECRETOS SINTETIZADOS|RESOLUCIONES|FALLOS|DISPOSICIONES|DISPOSICIÓN|LICITACIONES|CONCURSOS|COMUNICADOS|EDICTOS LEY PIERRI|EDICTOS NOTIFICATORIOS|REGISTRO REDAM|EDICTOS DE MINERÍA|EDICTOS DE MENSURA|EDICTO DPA|EDICTOS I\.P\.P\.V\.|NÓMINA PREADJUDICATARIOS DE VIVIENDAS|$))/g;
-
+    const sectionsRegex = /(LEY\n|DECRETOS\n|DECRETOS SINTETIZADOS\n|RESOLUCIONES\n|FALLOS\n|DISPOSICIONES\n|DISPOSICIÓN\n|LICITACIONES\n|CONCURSOS\n|COMUNICADOS\n|EDICTOS LEY PIERRI\n|EDICTOS NOTIFICATORIOS\n|REGISTRO REDAM\n|EDICTOS DE MINERÍA\n|EDICTOS DE MENSURA\n|EDICTO DPA\n|EDICTOS I\.P\.P\.V\.\n|NÓMINA PREADJUDICATARIOS DE VIVIENDAS\n)([\s\S]+?)(?=(LEY\n|DECRETOS\n|DECRETOS SINTETIZADOS\n|RESOLUCIONES\n|FALLOS\n|DISPOSICIONES\n|DISPOSICIÓN\n|LICITACIONES\n|CONCURSOS\n|COMUNICADOS\n|EDICTOS LEY PIERRI\n|EDICTOS NOTIFICATORIOS\n|REGISTRO REDAM\n|EDICTOS DE MINERÍA\n|EDICTOS DE MENSURA\n|EDICTO DPA\n|EDICTOS I\.P\.P\.V\.\n|NÓMINA PREADJUDICATARIOS DE VIVIENDAS\n|$))/g;
     let match;
     while (match = sectionsRegex.exec(text)) {
         sections.push({
-            administrativeSectionTitle: match[1],
+            administrativeSectionTitle: match[1].replace(/\n/g, ''),
             administrativeSectionText: match[2]
         });
     }
@@ -128,6 +127,23 @@ function processNomina(text) {
     return nominas;
 }
 
+function processDecrees(text) {
+    const decreesRegex = /([\s\S]+?)(?=–—oOo—–|$)/g;
+
+    let decrees = [];
+    let match;
+    while ((match = decreesRegex.exec(text)) !== null) {
+        let decreeContent = match[0].replace(/–—oOo—–/g, '').trim();
+        let decreeNumber = decreeContent.match(/DECRETO N[º°] (\d+)/)[1];
+        decrees.push({
+            title: `Auditoría Legislativa - DECRETOS - DECRETO Nº ${decreeNumber}`,
+            content: decreeContent
+        });
+    }
+
+    return decrees;
+}
+
 module.exports = {
     getSections,
     processResolutions,
@@ -136,5 +152,6 @@ module.exports = {
     processComunicados,
     processEdictosLeyPierri,
     processEdictosIPPV,
-    processNomina
+    processNomina,
+    processDecrees
 };
