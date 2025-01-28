@@ -4,7 +4,8 @@ const {
     processResolutions,
     processLicitaciones,
     processConcursos,
-    processComunicados
+    processComunicados,
+    processEdictosLeyPierri
 } = require('./utils/processSeccionAdministrativa.js');
 module.exports = async function parseRioNegroPDF(pdfBuffer) {
     const pdfData = await pdf(pdfBuffer);
@@ -20,7 +21,7 @@ module.exports = async function parseRioNegroPDF(pdfBuffer) {
         'LICITACIONES': processLicitaciones,
         'CONCURSOS': processConcursos,
         'COMUNICADOS': processComunicados,
-        // 'EDICTOS LEY PIERRI': 'Edictos Ley Pierri',
+        'EDICTOS LEY PIERRI': processEdictosLeyPierri,
         // 'EDICTOS NOTIFICATORIOS': 'Edictos Notificatorios',
         // 'REGISTRO REDAM': 'Registro Redam',
         // 'EDICTOS DE MINERÍA': 'Edictos de Minería',

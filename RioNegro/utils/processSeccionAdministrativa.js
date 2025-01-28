@@ -77,10 +77,28 @@ function processComunicados(text) {
     return comunicados;
 }
 
+function processEdictosLeyPierri(text) {
+    const edictosLeyPierriRegex = /([\s\S]+?)(?=-–—•—–-|$)/g;
+
+    let edicts = [];
+    let match;
+
+    while ((match = edictosLeyPierriRegex.exec(text)) !== null) {
+        let edictContent = match[0].replace(/-–—•—–-/g, '').trim();
+        edicts.push({
+            title: `Auditoría Legislativa - EDICTOS LEY PIERRI - EDICTO`,
+            content: edictContent
+        });
+    }
+
+    return edicts;
+}
+
 module.exports = {
     getSections,
     processResolutions,
     processLicitaciones,
     processConcursos,
-    processComunicados
+    processComunicados,
+    processEdictosLeyPierri
 };
