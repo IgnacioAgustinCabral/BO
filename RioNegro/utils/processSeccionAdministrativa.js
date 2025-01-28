@@ -144,7 +144,7 @@ function processDecrees(text) {
     return decrees;
 }
 
-function processSynthesizedDecrees(text){
+function processSynthesizedDecrees(text) {
     const synthesizedDecreesRegex = /DECRETO N[º°] \d+[\s\S]*?(?=(DECRETO N[º°] \d+|$))/g;
 
     let synthesizedDecrees = [];
@@ -161,7 +161,7 @@ function processSynthesizedDecrees(text){
     return synthesizedDecrees;
 }
 
-function processDisposiciones(text){
+function processDisposiciones(text) {
     const disposicionesRegex = /([\s\S]+?)(?=–—oOo—–|$)/g;
 
     let disposiciones = [];
@@ -176,6 +176,24 @@ function processDisposiciones(text){
 
     return disposiciones;
 }
+
+function processEdictosMineria(text) {
+    const edictosMineriaRegex = /([\s\S]+?)(?=-–—•—–-|$)/g;
+
+    let edicts = [];
+    let match;
+
+    while ((match = edictosMineriaRegex.exec(text)) !== null) {
+        let edictContent = match[0].replace(/-–—•—–-/g, '').trim();
+        edicts.push({
+            title: `Auditoría Legislativa - EDICTOS DE MINERÍA - EDICTO`,
+            content: edictContent
+        });
+    }
+
+    return edicts;
+}
+
 module.exports = {
     getSections,
     processResolutions,
@@ -187,5 +205,6 @@ module.exports = {
     processNomina,
     processDecrees,
     processSynthesizedDecrees,
-    processDisposiciones
+    processDisposiciones,
+    processEdictosMineria
 };

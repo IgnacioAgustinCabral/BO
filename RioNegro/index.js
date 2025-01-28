@@ -10,7 +10,8 @@ const {
     processNomina,
     processDecrees,
     processSynthesizedDecrees,
-    processDisposiciones
+    processDisposiciones,
+    processEdictosMineria
 } = require('./utils/processSeccionAdministrativa.js');
 module.exports = async function parseRioNegroPDF(pdfBuffer) {
     const pdfData = await pdf(pdfBuffer);
@@ -29,7 +30,7 @@ module.exports = async function parseRioNegroPDF(pdfBuffer) {
         'EDICTOS LEY PIERRI': processEdictosLeyPierri,
         // 'EDICTOS NOTIFICATORIOS': 'Edictos Notificatorios',
         // 'REGISTRO REDAM': 'Registro Redam',
-        // 'EDICTOS DE MINERÍA': 'Edictos de Minería',
+        'EDICTOS DE MINERÍA': processEdictosMineria,
         // 'EDICTOS DE MENSURA': 'Edictos de Mensura',
         // 'EDICTO DPA': 'Edicto Dpa',
         'EDICTOS I.P.P.V.': processEdictosIPPV,
@@ -41,7 +42,8 @@ module.exports = async function parseRioNegroPDF(pdfBuffer) {
         .replace(/- Rep[uú]blica Argentina -[\s\S]*?CONTACTOS BOLET[IÍ]N OFICIAL\n/gm, '') //eliminates first two pages
         .replace(/ {2,}/gm, ' ')
         .replace(/\n{2,}/gm, '\n')
-        .replace(/Secretar[ií]a Legal y T[eé]cnica - Direcci[oó]n de Despacho y Bolet[ií]n Oficial[\s\S]*?BOLET[IÍ]N OFICIAL/gm, ''); //eliminates last page final text
+        .replace(/Secretar[ií]a Legal y T[eé]cnica - Direcci[oó]n de Despacho y Bolet[ií]n Oficial[\s\S]*?BOLET[IÍ]N OFICIAL/gm, '') //eliminates last page final text
+        .replace(/ \n/g, '\n');
 
     let sections = [];
     const sectionsRegex = /(SECCI[OÓ]N ADMINISTRATIVA|SECCI[OÓ]N JUDICIAL|SECCI[OÓ]N COMERCIO, INDUSTRIA\nY ENTIDADES CIVILES)([\s\S]*?)(?=(SECCI[OÓ]N ADMINISTRATIVA|SECCI[OÓ]N JUDICIAL|SECCI[OÓ]N COMERCIO, INDUSTRIA\nY ENTIDADES CIVILES|$))/g;
