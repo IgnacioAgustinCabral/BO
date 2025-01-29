@@ -211,6 +211,24 @@ function processEdictosNotificatorios(text) {
     return edicts;
 }
 
+function processFallos(text) {
+    const fallosRegex = /([\s\S]+?)(?=-–—•—–-|––O––|$)/g;
+
+    let fallos = [];
+    let match;
+    while ((match = fallosRegex.exec(text)) !== null) {
+        let falloContent = match[0].replace(/-–—•—–-|––O––/g, '').trim();
+        let falloNumber = falloContent.match(/Fallo “TCRN” N[º°] (\d+)\/\d+\n/)[1];
+
+        fallos.push({
+            title: `Auditoría Legislativa - FALLOS - FALLO N° ${falloNumber}`,
+            content: falloContent
+        });
+    }
+
+    return fallos;
+}
+
 module.exports = {
     getSections,
     processResolutions,
@@ -224,5 +242,6 @@ module.exports = {
     processSynthesizedDecrees,
     processDisposiciones,
     processEdictosMineria,
-    processEdictosNotificatorios
+    processEdictosNotificatorios,
+    processFallos
 };
