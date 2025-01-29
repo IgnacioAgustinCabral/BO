@@ -229,6 +229,23 @@ function processFallos(text) {
     return fallos;
 }
 
+function processEdictosMensura(text) {
+    const edictosMensuraRegex = /([\s\S]+?)(?=-–—•—–-|$)/g;
+
+    let edicts = [];
+    let match;
+
+    while ((match = edictosMensuraRegex.exec(text)) !== null) {
+        let edictContent = match[0].replace(/-–—•—–-/g, '').trim();
+        edicts.push({
+            title: `Auditoría Legislativa - EDICTOS DE MENSURA - EDICTO`,
+            content: edictContent
+        });
+    }
+
+    return edicts;
+}
+
 module.exports = {
     getSections,
     processResolutions,
@@ -243,5 +260,6 @@ module.exports = {
     processDisposiciones,
     processEdictosMineria,
     processEdictosNotificatorios,
-    processFallos
+    processFallos,
+    processEdictosMensura
 };
