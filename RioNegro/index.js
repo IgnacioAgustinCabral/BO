@@ -14,7 +14,8 @@ const {
     processEdictosMineria,
     processEdictosNotificatorios,
     processFallos,
-    processEdictosMensura
+    processEdictosMensura,
+    processEdictosDPA
 } = require('./utils/processSeccionAdministrativa.js');
 module.exports = async function parseRioNegroPDF(pdfBuffer) {
     const pdfData = await pdf(pdfBuffer);
@@ -35,7 +36,9 @@ module.exports = async function parseRioNegroPDF(pdfBuffer) {
         // 'REGISTRO REDAM': 'Registro Redam',
         'EDICTOS DE MINERÍA': processEdictosMineria,
         'EDICTOS DE MENSURA': processEdictosMensura,
-        // 'EDICTO DPA': 'Edicto Dpa',
+        'EDICTO DPA': processEdictosDPA,
+        'EDICTOS D.P.A.': processEdictosDPA,
+        'EDICTO D.P.A.': processEdictosDPA,
         'EDICTOS I.P.P.V.': processEdictosIPPV,
         'NÓMINA PREADJUDICATARIOS DE VIVIENDAS': processNomina
     };

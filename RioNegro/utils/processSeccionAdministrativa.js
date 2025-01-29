@@ -1,6 +1,6 @@
 function getSections(text) {
     let sections = [];
-    const sectionsRegex = /(LEY\n|DECRETOS\n|DECRETOS SINTETIZADOS\n|RESOLUCIONES\n|FALLOS\n|DISPOSICIONES\n|DISPOSICIÓN\n|LICITACIONES\n|CONCURSOS\n|COMUNICADOS\n|EDICTOS LEY PIERRI\n|EDICTOS NOTIFICATORIOS\n|REGISTRO REDAM\n|EDICTOS DE MINERÍA\n|EDICTOS DE MENSURA\n|EDICTO DPA\n|EDICTOS I\.P\.P\.V\.\n|NÓMINA PREADJUDICATARIOS DE VIVIENDAS\n)([\s\S]+?)(?=(LEY\n|DECRETOS\n|DECRETOS SINTETIZADOS\n|RESOLUCIONES\n|FALLOS\n|DISPOSICIONES\n|DISPOSICIÓN\n|LICITACIONES\n|CONCURSOS\n|COMUNICADOS\n|EDICTOS LEY PIERRI\n|EDICTOS NOTIFICATORIOS\n|REGISTRO REDAM\n|EDICTOS DE MINERÍA\n|EDICTOS DE MENSURA\n|EDICTO DPA\n|EDICTOS I\.P\.P\.V\.\n|NÓMINA PREADJUDICATARIOS DE VIVIENDAS\n|$))/g;
+    const sectionsRegex = /(LEY\n|DECRETOS\n|DECRETOS SINTETIZADOS\n|RESOLUCIONES\n|FALLOS\n|DISPOSICIONES\n|DISPOSICIÓN\n|LICITACIONES\n|CONCURSOS\n|COMUNICADOS\n|EDICTOS LEY PIERRI\n|EDICTOS NOTIFICATORIOS\n|REGISTRO REDAM\n|EDICTOS DE MINERÍA\n|EDICTOS DE MENSURA\n|EDICTO DPA\n|EDICTOS D\.P\.A\.\n|EDICTO D\.P\.A\.\n|EDICTOS I\.P\.P\.V\.\n|NÓMINA PREADJUDICATARIOS DE VIVIENDAS\n)([\s\S]+?)(?=(LEY\n|DECRETOS\n|DECRETOS SINTETIZADOS\n|RESOLUCIONES\n|FALLOS\n|DISPOSICIONES\n|DISPOSICIÓN\n|LICITACIONES\n|CONCURSOS\n|COMUNICADOS\n|EDICTOS LEY PIERRI\n|EDICTOS NOTIFICATORIOS\n|REGISTRO REDAM\n|EDICTOS DE MINERÍA\n|EDICTOS DE MENSURA\n|EDICTO DPA\n|EDICTOS D\.P\.A\.\n|EDICTO D\.P\.A\.\n|EDICTOS I\.P\.P\.V\.\n|NÓMINA PREADJUDICATARIOS DE VIVIENDAS\n|$))/g;
     let match;
     while (match = sectionsRegex.exec(text)) {
         sections.push({
@@ -246,6 +246,23 @@ function processEdictosMensura(text) {
     return edicts;
 }
 
+function processEdictosDPA(text) {
+    const edictosDPARegex = /([\s\S]+?)(?=-–—•—–-|$)/g;
+
+    let edicts = [];
+    let match;
+
+    while ((match = edictosDPARegex.exec(text)) !== null) {
+        let edictContent = match[0].replace(/-–—•—–-/g, '').trim();
+        edicts.push({
+            title: `Auditoría Legislativa - EDICTOS D.P.A. - EDICTO`,
+            content: edictContent
+        });
+    }
+
+    return edicts;
+}
+
 module.exports = {
     getSections,
     processResolutions,
@@ -261,5 +278,6 @@ module.exports = {
     processEdictosMineria,
     processEdictosNotificatorios,
     processFallos,
-    processEdictosMensura
+    processEdictosMensura,
+    processEdictosDPA
 };
