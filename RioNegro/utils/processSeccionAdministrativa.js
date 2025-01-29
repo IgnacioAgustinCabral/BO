@@ -194,6 +194,23 @@ function processEdictosMineria(text) {
     return edicts;
 }
 
+function processEdictosNotificatorios(text) {
+    const edictosNotificatoriosRegex = /([\s\S]+?)(?=-–—•—–-|$)/g;
+
+    let edicts = [];
+    let match;
+
+    while ((match = edictosNotificatoriosRegex.exec(text)) !== null) {
+        let edictContent = match[0].replace(/-–—•—–-/g, '').trim();
+        edicts.push({
+            title: `Auditoría Legislativa - EDICTOS NOTIFICATORIOS - EDICTO`,
+            content: edictContent
+        });
+    }
+
+    return edicts;
+}
+
 module.exports = {
     getSections,
     processResolutions,
@@ -206,5 +223,6 @@ module.exports = {
     processDecrees,
     processSynthesizedDecrees,
     processDisposiciones,
-    processEdictosMineria
+    processEdictosMineria,
+    processEdictosNotificatorios
 };
