@@ -40,6 +40,7 @@ module.exports = async function parseRioNegroPDF(pdfBuffer) {
         'EDICTOS D.P.A.': processEdictosDPA,
         'EDICTO D.P.A.': processEdictosDPA,
         'EDICTOS I.P.P.V.': processEdictosIPPV,
+        'EDICTO I.P.P.V.': processEdictosIPPV,
         'NÓMINA PREADJUDICATARIOS DE VIVIENDAS': processNomina
     };
 
