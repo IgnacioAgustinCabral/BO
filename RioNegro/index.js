@@ -1,6 +1,7 @@
 const pdf = require("pdf-parse");
 const {
     getSections,
+    processLaws,
     processResolutions,
     processLicitaciones,
     processConcursos,
@@ -21,7 +22,8 @@ module.exports = async function parseRioNegroPDF(pdfBuffer) {
     const pdfData = await pdf(pdfBuffer);
     let text = pdfData.text;
     const administrativeSectionsNames = {
-        // 'LEY': 'Ley',
+        'LEY': processLaws,
+        'LEYES': processLaws,
         'DECRETOS': processDecrees,
         'DECRETOS SINTETIZADOS': processSynthesizedDecrees,
         'RESOLUCIONES': processResolutions,
@@ -50,7 +52,8 @@ module.exports = async function parseRioNegroPDF(pdfBuffer) {
         .replace(/ {2,}/gm, ' ')
         .replace(/\n{2,}/gm, '\n')
         .replace(/Secretar[ií]a Legal y T[eé]cnica - Direcci[oó]n de Despacho y Bolet[ií]n Oficial[\s\S]*?BOLET[IÍ]N OFICIAL/gm, '') //eliminates last page final text
-        .replace(/ \n/g, '\n');
+        .replace(/ \n/g, '\n')
+        .replace(/Sanciona con Fuerza de\nLEY/g, 'Sanciona con Fuerza de Ley');
 
     let sections = [];
     const sectionsRegex = /(SECCI[OÓ]N ADMINISTRATIVA|SECCI[OÓ]N JUDICIAL|SECCI[OÓ]N COMERCIO, INDUSTRIA\nY ENTIDADES CIVILES)([\s\S]*?)(?=(SECCI[OÓ]N ADMINISTRATIVA|SECCI[OÓ]N JUDICIAL|SECCI[OÓ]N COMERCIO, INDUSTRIA\nY ENTIDADES CIVILES|$))/g;

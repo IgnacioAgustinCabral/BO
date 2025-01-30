@@ -1,6 +1,6 @@
 function getSections(text) {
     let sections = [];
-    const sectionsRegex = /(LEY\n|DECRETOS\n|DECRETOS SINTETIZADOS\n|RESOLUCIONES\n|FALLOS\n|DISPOSICIONES\n|DISPOSICIÓN\n|LICITACIONES\n|CONCURSOS\n|COMUNICADOS\n|CONTRATACI[OÓ]N DIRECTA\n|EXPURGO DOCUMENTAL|EDICTOS LEY PIERRI\n|EDICTOS NOTIFICATORIOS\n|REGISTRO REDAM\n|EDICTOS DE MINERÍA\n|EDICTOS DE MENSURA\n|EDICTO DPA\n|EDICTOS D\.P\.A\.\n|EDICTO D\.P\.A\.\n|EDICTOS I\.P\.P\.V\.\n|EDICTO I\.P\.P\.V\.\n|NÓMINA PREADJUDICATARIOS DE VIVIENDAS\n)([\s\S]+?)(?=(LEY\n|DECRETOS\n|DECRETOS SINTETIZADOS\n|RESOLUCIONES\n|FALLOS\n|DISPOSICIONES\n|DISPOSICIÓN\n|LICITACIONES\n|CONCURSOS\n|COMUNICADOS\n|CONTRATACI[OÓ]N DIRECTA\n|EXPURGO DOCUMENTAL|EDICTOS LEY PIERRI\n|EDICTOS NOTIFICATORIOS\n|REGISTRO REDAM\n|EDICTOS DE MINERÍA\n|EDICTOS DE MENSURA\n|EDICTO DPA\n|EDICTOS D\.P\.A\.\n|EDICTO D\.P\.A\.\n|EDICTOS I\.P\.P\.V\.\n|EDICTO I\.P\.P\.V\.\n|NÓMINA PREADJUDICATARIOS DE VIVIENDAS\n|$))/g;
+    const sectionsRegex = /(LEY\n|LEYES\n|DECRETOS\n|DECRETOS SINTETIZADOS\n|RESOLUCIONES\n|FALLOS\n|DISPOSICIONES\n|DISPOSICIÓN\n|LICITACIONES\n|CONCURSOS\n|COMUNICADOS\n|CONTRATACI[OÓ]N DIRECTA\n|EXPURGO DOCUMENTAL|EDICTOS LEY PIERRI\n|EDICTOS NOTIFICATORIOS\n|REGISTRO REDAM\n|EDICTOS DE MINERÍA\n|EDICTOS DE MENSURA\n|EDICTO DPA\n|EDICTOS D\.P\.A\.\n|EDICTO D\.P\.A\.\n|EDICTOS I\.P\.P\.V\.\n|EDICTO I\.P\.P\.V\.\n|NÓMINA PREADJUDICATARIOS DE VIVIENDAS\n)([\s\S]+?)(?=(LEY\n|LEYES\n|DECRETOS\n|DECRETOS SINTETIZADOS\n|RESOLUCIONES\n|FALLOS\n|DISPOSICIONES\n|DISPOSICIÓN\n|LICITACIONES\n|CONCURSOS\n|COMUNICADOS\n|CONTRATACI[OÓ]N DIRECTA\n|EXPURGO DOCUMENTAL|EDICTOS LEY PIERRI\n|EDICTOS NOTIFICATORIOS\n|REGISTRO REDAM\n|EDICTOS DE MINERÍA\n|EDICTOS DE MENSURA\n|EDICTO DPA\n|EDICTOS D\.P\.A\.\n|EDICTO D\.P\.A\.\n|EDICTOS I\.P\.P\.V\.\n|EDICTO I\.P\.P\.V\.\n|NÓMINA PREADJUDICATARIOS DE VIVIENDAS\n|$))/g;
     let match;
     while (match = sectionsRegex.exec(text)) {
         sections.push({
@@ -10,6 +10,25 @@ function getSections(text) {
     }
 
     return sections;
+}
+
+function processLaws(text) {
+    const lawsRegex = /([\s\S]+?)(?=–—oOo—–|$)/g;
+
+    let laws = [];
+    let match;
+
+    while ((match = lawsRegex.exec(text)) !== null) {
+        let lawContent = match[0].replace(/–—oOo—–/g, '').trim();
+        let lawNumber = lawContent.match(/LEY N[º°] (\d+)/)[1];
+
+        laws.push({
+            title: `Auditoría Legislativa - LEYES - LEY Nº ${lawNumber}`,
+            content: lawContent
+        });
+    }
+
+    return laws;
 }
 
 function processResolutions(text) {
@@ -265,6 +284,7 @@ function processEdictosDPA(text) {
 
 module.exports = {
     getSections,
+    processLaws,
     processResolutions,
     processLicitaciones,
     processConcursos,
