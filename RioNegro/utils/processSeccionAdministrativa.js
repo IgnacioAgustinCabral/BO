@@ -19,7 +19,13 @@ function processLaws(text) {
     let match;
 
     while ((match = lawsRegex.exec(text)) !== null) {
-        let lawContent = match[0].replace(/–—oOo—–/g, '').trim();
+        let lawContent = match[0].replace(/–—oOo—–/g, '')
+            .replace(/^(Art[ií]culo)([\s\S]*?)(?=^(Art[ií]culo))/gm, match => {
+                return match.replace(/\n/g, ' ')
+                    .replace(/$/g, '\n\n');
+            })
+            .replace(/([a-z]+\))/gm, '\n$1')
+            .trim();
         let lawNumber = lawContent.match(/LEY N[º°] (\d+)/)[1];
 
         laws.push({
@@ -37,7 +43,16 @@ function processResolutions(text) {
     let resolutions = [];
     let match;
     while ((match = resolutionRegex.exec(text)) !== null) {
-        let resolutionContent = match[0].replace(/–—oOo—–/g, '').trim();
+        let resolutionContent = match[0].replace(/–—oOo—–/g, '')
+            .replace(/^[Qq]ue[\s\S]*?;\n/gm, match => {
+                return match.replace(/\n/g, ' ')
+                    .replace(/$/g, '\n\n');
+            })
+            .replace(/^(Art[ií]culo)([\s\S]*?)(?=^(Art[ií]culo))/gm, match => {
+                return match.replace(/\n/g, ' ')
+                    .replace(/$/g, '\n\n');
+            }).trim();
+
         resolutions.push({
             title: `Auditoría Legislativa - RESOLUCIONES - RESOLUCIÓN`,
             content: resolutionContent
@@ -65,15 +80,16 @@ function processLicitaciones(text) {
 }
 
 function processConcursos(text) {
-    const concursosRegex = /([\s\S]+?)(?=Provincia de R[ií]o Negro\n|$)/g;
+    const concursosRegex = /([\s\S]+?)(?=–—oOo—–|––O––|$)/g;
 
     let concursos = [];
     let match;
 
     while ((match = concursosRegex.exec(text)) !== null) {
+        let concursoContent = match[0].replace(/–—oOo—–|––O––/g, '');
         concursos.push({
             title: `Auditoría Legislativa - CONCURSOS - CONCURSO`,
-            content: match[0]
+            content: concursoContent
         });
     }
 
@@ -86,9 +102,14 @@ function processComunicados(text) {
     let comunicados = [];
     let match;
     while ((match = comunicadosRegex.exec(text)) !== null) {
+        let comunicadoContent = match[0].replace(/–—oOo—–/g, '')
+            .replace(/([^\n]+(?:\n(?![A-Z\s]))*)/gm, match => {
+                return match.replace(/\n/g, ' ');
+            })
+            .trim();
         comunicados.push({
             title: `Auditoría Legislativa - COMUNICADOS - COMUNICADO`,
-            content: match[0]
+            content: comunicadoContent
         });
     }
 
@@ -102,7 +123,9 @@ function processEdictosLeyPierri(text) {
     let match;
 
     while ((match = edictosLeyPierriRegex.exec(text)) !== null) {
-        let edictContent = match[0].replace(/-–—•—–-/g, '').trim();
+        let edictContent = match[0].replace(/-–—•—–-/g, '')
+            .replace(/\n/g, ' ')
+            .trim();
         edicts.push({
             title: `Auditoría Legislativa - EDICTOS LEY PIERRI - EDICTO`,
             content: edictContent
@@ -152,7 +175,16 @@ function processDecrees(text) {
     let decrees = [];
     let match;
     while ((match = decreesRegex.exec(text)) !== null) {
-        let decreeContent = match[0].replace(/–—oOo—–/g, '').trim();
+        let decreeContent = match[0].replace(/–—oOo—–/g, '')
+            .replace(/^[Qq]ue[\s\S]*?;\n/gm, match => {
+                return match.replace(/\n/g, ' ')
+                    .replace(/$/g, '\n\n');
+            })
+            .replace(/^(Art[ií]culo)([\s\S]*?)(?=^(Art[ií]culo))/gm, match => {
+                return match.replace(/\n/g, ' ')
+                    .replace(/$/g, '\n\n');
+            })
+            .trim();
         let decreeNumber = decreeContent.match(/DECRETO N[º°] (\d+)/)[1];
         decrees.push({
             title: `Auditoría Legislativa - DECRETOS - DECRETO Nº ${decreeNumber}`,
@@ -169,7 +201,8 @@ function processSynthesizedDecrees(text) {
     let synthesizedDecrees = [];
     let match;
     while ((match = synthesizedDecreesRegex.exec(text)) !== null) {
-        let decreeContent = match[0].trim();
+        let decreeContent = match[0].replace(/\n/gm, ' ')
+            .trim();
         let decreeNumber = decreeContent.match(/DECRETO N[º°] (\d+)/)[1];
         synthesizedDecrees.push({
             title: `Auditoría Legislativa - DECRETOS SINTETIZADOS - DECRETO Nº ${decreeNumber}`,
@@ -203,7 +236,9 @@ function processEdictosMineria(text) {
     let match;
 
     while ((match = edictosMineriaRegex.exec(text)) !== null) {
-        let edictContent = match[0].replace(/-–—•—–-/g, '').trim();
+        let edictContent = match[0].replace(/-–—•—–-/g, '')
+            .replace(/\n/g, ' ')
+            .trim();
         edicts.push({
             title: `Auditoría Legislativa - EDICTOS DE MINERÍA - EDICTO`,
             content: edictContent
@@ -220,7 +255,9 @@ function processEdictosNotificatorios(text) {
     let match;
 
     while ((match = edictosNotificatoriosRegex.exec(text)) !== null) {
-        let edictContent = match[0].replace(/-–—•—–-/g, '').trim();
+        let edictContent = match[0].replace(/-–—•—–-/g, '')
+            .replace(/\n/g, ' ')
+            .trim();
         edicts.push({
             title: `Auditoría Legislativa - EDICTOS NOTIFICATORIOS - EDICTO`,
             content: edictContent
@@ -236,8 +273,10 @@ function processFallos(text) {
     let fallos = [];
     let match;
     while ((match = fallosRegex.exec(text)) !== null) {
-        let falloContent = match[0].replace(/-–—•—–-|––O––/g, '').trim();
-        let falloNumber = falloContent.match(/Fallo “TCRN” N[º°] (\d+)\/\d+\n/)[1];
+        let falloContent = match[0].replace(/-–—•—–-|––O––/g, '')
+            .replace(/\n/gm, ' ')
+            .trim();
+        let falloNumber = falloContent.match(/Fallo “TCRN” N[º°] (\d+)\/\d+/)[1];
 
         fallos.push({
             title: `Auditoría Legislativa - FALLOS - FALLO N° ${falloNumber}`,
@@ -255,7 +294,9 @@ function processEdictosMensura(text) {
     let match;
 
     while ((match = edictosMensuraRegex.exec(text)) !== null) {
-        let edictContent = match[0].replace(/-–—•—–-/g, '').trim();
+        let edictContent = match[0].replace(/-–—•—–-/g, '')
+            .replace(/\n/g, ' ')
+            .trim();
         edicts.push({
             title: `Auditoría Legislativa - EDICTOS DE MENSURA - EDICTO`,
             content: edictContent
@@ -272,7 +313,9 @@ function processEdictosDPA(text) {
     let match;
 
     while ((match = edictosDPARegex.exec(text)) !== null) {
-        let edictContent = match[0].replace(/-–—•—–-/g, '').trim();
+        let edictContent = match[0].replace(/-–—•—–-/g, '')
+            .replace(/\n/g, ' ')
+            .trim();
         edicts.push({
             title: `Auditoría Legislativa - EDICTOS D.P.A. - EDICTO`,
             content: edictContent
