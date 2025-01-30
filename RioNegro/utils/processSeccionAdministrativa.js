@@ -1,6 +1,6 @@
 function getSections(text) {
     let sections = [];
-    const sectionsRegex = /(LEY\n|LEYES\n|DECRETOS\n|DECRETOS SINTETIZADOS\n|RESOLUCIONES\n|FALLOS\n|DISPOSICIONES\n|DISPOSICIÓN\n|LICITACIONES\n|CONCURSOS\n|COMUNICADOS\n|CONTRATACI[OÓ]N DIRECTA\n|EXPURGO DOCUMENTAL|EDICTOS LEY PIERRI\n|EDICTOS NOTIFICATORIOS\n|REGISTRO REDAM\n|EDICTOS DE MINERÍA\n|EDICTOS DE MENSURA\n|EDICTO DPA\n|EDICTOS D\.P\.A\.\n|EDICTO D\.P\.A\.\n|EDICTOS I\.P\.P\.V\.\n|EDICTO I\.P\.P\.V\.\n|NÓMINA PREADJUDICATARIOS DE VIVIENDAS\n)([\s\S]+?)(?=(LEY\n|LEYES\n|DECRETOS\n|DECRETOS SINTETIZADOS\n|RESOLUCIONES\n|FALLOS\n|DISPOSICIONES\n|DISPOSICIÓN\n|LICITACIONES\n|CONCURSOS\n|COMUNICADOS\n|CONTRATACI[OÓ]N DIRECTA\n|EXPURGO DOCUMENTAL|EDICTOS LEY PIERRI\n|EDICTOS NOTIFICATORIOS\n|REGISTRO REDAM\n|EDICTOS DE MINERÍA\n|EDICTOS DE MENSURA\n|EDICTO DPA\n|EDICTOS D\.P\.A\.\n|EDICTO D\.P\.A\.\n|EDICTOS I\.P\.P\.V\.\n|EDICTO I\.P\.P\.V\.\n|NÓMINA PREADJUDICATARIOS DE VIVIENDAS\n|$))/g;
+    const sectionsRegex = /(LEY\n|LEYES\n|DECRETOS\n|DECRETOS SINTETIZADOS\n|RESOLUCIONES\n|FALLOS\n|DISPOSICIONES\n|DISPOSICIÓN\n|LICITACIONES\n|CONCURSO DE PRECIOS\n|CONCURSOS\n|COMUNICADOS\n|CONTRATACI[OÓ]N DIRECTA\n|EXPURGO DOCUMENTAL|EDICTOS LEY PIERRI\n|EDICTOS NOTIFICATORIOS\n|REGISTRO REDAM\n|EDICTOS DE MINERÍA\n|EDICTOS DE MENSURA\n|EDICTO DPA\n|EDICTOS D\.P\.A\.\n|EDICTO D\.P\.A\.\n|EDICTOS I\.P\.P\.V\.\n|EDICTO I\.P\.P\.V\.\n|NÓMINA PREADJUDICATARIOS DE VIVIENDAS\n)([\s\S]+?)(?=(LEY\n|LEYES\n|DECRETOS\n|DECRETOS SINTETIZADOS\n|RESOLUCIONES\n|FALLOS\n|DISPOSICIONES\n|DISPOSICIÓN\n|LICITACIONES\n|CONCURSO DE PRECIOS\n|CONCURSOS\n|COMUNICADOS\n|CONTRATACI[OÓ]N DIRECTA\n|EXPURGO DOCUMENTAL|EDICTOS LEY PIERRI\n|EDICTOS NOTIFICATORIOS\n|REGISTRO REDAM\n|EDICTOS DE MINERÍA\n|EDICTOS DE MENSURA\n|EDICTO DPA\n|EDICTOS D\.P\.A\.\n|EDICTO D\.P\.A\.\n|EDICTOS I\.P\.P\.V\.\n|EDICTO I\.P\.P\.V\.\n|NÓMINA PREADJUDICATARIOS DE VIVIENDAS\n))/g;
     let match;
     while (match = sectionsRegex.exec(text)) {
         sections.push({
@@ -38,12 +38,12 @@ function processLaws(text) {
 }
 
 function processResolutions(text) {
-    const resolutionRegex = /([\s\S]+?)(?=–—oOo—–|$)/g;
+    const resolutionRegex = /([\s\S]+?)(?=–—oOo—–|––O––|$)/g;
 
     let resolutions = [];
     let match;
     while ((match = resolutionRegex.exec(text)) !== null) {
-        let resolutionContent = match[0].replace(/–—oOo—–/g, '')
+        let resolutionContent = match[0].replace(/–—oOo—–|––O––/g, '')
             .replace(/^[Qq]ue[\s\S]*?;\n/gm, match => {
                 return match.replace(/\n/g, ' ')
                     .replace(/$/g, '\n\n');
@@ -63,13 +63,13 @@ function processResolutions(text) {
 }
 
 function processLicitaciones(text) {
-    const licitacionRegex = /([\s\S]+?)(?=–—oOo—–|$)/g;
+    const licitacionRegex = /([\s\S]+?)(?=–—oOo—–|––O––|$)/g;
 
     let licitaciones = [];
     let match;
 
     while ((match = licitacionRegex.exec(text)) !== null) {
-        let licitacionContent = match[0].replace(/–—oOo—–/g, '').trim();
+        let licitacionContent = match[0].replace(/–—oOo—–|––O––/g, '').trim();
         licitaciones.push({
             title: `Auditoría Legislativa - LICITACIONES - LICITACIÓN`,
             content: licitacionContent
@@ -136,13 +136,13 @@ function processEdictosLeyPierri(text) {
 }
 
 function processEdictosIPPV(text) {
-    const edictosIPPVRegex = /([\s\S]+?)(?=-–—•—–-|$)/g;
+    const edictosIPPVRegex = /([\s\S]+?)(?=-–—•—–-|–—oOo—–|––O––|$)/g;
 
     let edicts = [];
     let match;
 
     while ((match = edictosIPPVRegex.exec(text)) !== null) {
-        let edictContent = match[0].replace(/-–—•—–-/g, '').trim();
+        let edictContent = match[0].replace(/-–—•—–-|––O––/g, '').trim();
         edicts.push({
             title: `Auditoría Legislativa - EDICTOS I.P.P.V. - EDICTO`,
             content: edictContent
@@ -153,13 +153,13 @@ function processEdictosIPPV(text) {
 }
 
 function processNomina(text) {
-    const nominaRegex = /([\s\S]+?)(?=-–—•—–-|$)/g;
+    const nominaRegex = /([\s\S]+?)(?=-–—•—–-|––O––|$)/g;
 
     let nominas = [];
     let match;
 
     while ((match = nominaRegex.exec(text)) !== null) {
-        let edictContent = match[0].replace(/-–—•—–-/g, '').trim();
+        let edictContent = match[0].replace(/-–—•—–-|––O––/g, '').trim();
         nominas.push({
             title: `Auditoría Legislativa - NÓMINA PREADJUDICATARIOS DE VIVIENDAS - NÓMINA`,
             content: edictContent
