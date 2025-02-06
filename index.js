@@ -5,6 +5,7 @@ const parseSantaCruzPDF = require('./SantaCruz/index.js');
 const parseCaletaOliviaPDF = require('./CaletaOlivia/index.js');
 const parseComodoroRivadaviaPDF = require('./ComodoroRivadavia/index.js');
 const parseRioNegroPDF = require('./RioNegro/index.js');
+const parseNeuquenCapitalPDF = require('./NeuquenProvincia/index.js');
 const port = 4000;
 const puppeteer = require('puppeteer');
 const app = express();
@@ -12,6 +13,7 @@ const app = express();
 const parsers = {
     '620': parseSantaCruzPDF,
     '621': parseChubutPDF,
+    '623': parseNeuquenCapitalPDF,
     '624': parseCaletaOliviaPDF,
     '627': parseRioNegroPDF,
     '628': parseComodoroRivadaviaPDF
