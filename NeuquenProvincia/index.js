@@ -1,6 +1,7 @@
 const pdf = require("pdf-parse");
+const extract = require('pdf-text-extract');const fs = require("node:fs");
 module.exports = async function NeuquenCapitalPDF(pdfBuffer) {
-    const pdfData = await pdf(pdfBuffer);
+    /*const pdfData = await pdf(pdfBuffer);
     let text = pdfData.text;
 
     text = text.replace(/Directora General:[\s\S]*?\(8300\) Neuquén \(Cap\.\)/gm, '')
@@ -50,17 +51,17 @@ module.exports = async function NeuquenCapitalPDF(pdfBuffer) {
     }
 
     const sectionProcessors = {
-        /*'DIRECCIÓN PROVINCIAL DE MINERÍA': processDireccionMineria,
+        /!*'DIRECCIÓN PROVINCIAL DE MINERÍA': processDireccionMineria,
         'CONTRATOS': processContratos,
         'LICITACIONES': processLicitaciones,
         'CONVOCATORIAS': processConvocatorias,
         'EDICTOS': processEdicts,
         'AVISOS': processAvisos,
         'NORMAS LEGALES': processNormasLegales,
-        'LEYES DE LA PROVINCIA': processLaws,*/
+        'LEYES DE LA PROVINCIA': processLaws,*!/
         'DECRETOS SINTETIZADOS': processSynthesizedDecrees,
-        /*'DECRETOS DE LA PROVINCIA': processDecrees,
-        'ACUERDOS DEL TRIBUNAL DE CUENTAS': processAcuerdos,*/
+        /!*'DECRETOS DE LA PROVINCIA': processDecrees,
+        'ACUERDOS DEL TRIBUNAL DE CUENTAS': processAcuerdos,*!/
     };
 
     let content = [];
@@ -75,7 +76,22 @@ module.exports = async function NeuquenCapitalPDF(pdfBuffer) {
 
     });
 
-    return content;
+    return content;*/
+    const pdfPath = "temp.pdf";
+    fs.writeFileSync(pdfPath, pdfBuffer);
+
+    extract(pdfPath, { splitPages: false }, (err, text) => {
+        if (err) {
+            console.error("Error extrayendo el texto:", err);
+            return;
+        }
+
+        // console.log("Texto extraído:\n", text);
+
+        // Guardar en un archivo .txt si lo deseas
+        fs.writeFileSync("output.txt", text.join("\n"));
+
+    });
 };
 
 function processSynthesizedDecrees(sectionName, content) {
