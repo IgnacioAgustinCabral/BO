@@ -28,7 +28,7 @@ module.exports = async function NeuquenCapitalPDF(pdfBuffer) {
             'LICITACIONES': processLicitaciones,
             // 'CONVOCATORIAS': processConvocatorias,
             'EDICTOS': processEdicts,
-            // 'AVISOS': processAvisos,
+            'AVISOS': processAvisos,
             // 'NORMAS LEGALES': processNormasLegales,
             // 'LEYES DE LA PROVINCIA': processLaws,
             'DECRETOS SINTETIZADOS': processSynthesizedDecrees,
@@ -131,6 +131,25 @@ function processEdicts(sectionName, content) {
     }
 
     return edicts;
+}
+
+function processAvisos(sectionName, content) {
+    content = content.replace(/\s*_{5,15}\s*/g, '\n__________\n');// clean up the section separator
+
+    const avisoRegex = /([\s\S]+?)(?=__________|$)/g;
+    let match;
+    const avisos = [];
+
+    while ((match = avisoRegex.exec(content)) !== null) {
+        const avisoContent = match[0].replace(/____________/g, '')
+            .trim();
+        avisos.push({
+            title: `Auditoría Legislativa - ${sectionName} - AVISO`,
+            content: avisoContent
+        });
+    }
+
+    return avisos;
 }
 
 function extractTextPromise(pdfPath) {
