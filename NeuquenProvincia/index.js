@@ -27,7 +27,7 @@ module.exports = async function NeuquenCapitalPDF(pdfBuffer) {
             'CONTRATOS': processContratos,
             'LICITACIONES': processLicitaciones,
             // 'CONVOCATORIAS': processConvocatorias,
-            // 'EDICTOS': processEdicts,
+            'EDICTOS': processEdicts,
             // 'AVISOS': processAvisos,
             // 'NORMAS LEGALES': processNormasLegales,
             // 'LEYES DE LA PROVINCIA': processLaws,
@@ -75,7 +75,9 @@ function processSynthesizedDecrees(sectionName, content) {
 }
 
 function processContratos(sectionName, content) {
-    const contratoRegex = /([\s\S]+?)(?=____________|$)/g;
+    content = content.replace(/\s*_{5,15}\s*/g, '\n__________\n');// clean up the section separator
+
+    const contratoRegex = /([\s\S]+?)(?=__________|$)/g;
     let match;
     const contratos = [];
 
@@ -110,6 +112,25 @@ function processLicitaciones(sectionName, content) {
     }
 
     return licitaciones;
+}
+
+function processEdicts(sectionName, content) {
+    content = content.replace(/\s*_{5,15}\s*/g, '\n__________\n');// clean up the section separator
+
+    const edictRegex = /([\s\S]+?)(?=__________|$)/g;
+    let match;
+    const edicts = [];
+
+    while ((match = edictRegex.exec(content)) !== null) {
+        const edictContent = match[0].replace(/____________/g, '')
+            .trim();
+        edicts.push({
+            title: `Auditoría Legislativa - ${sectionName} - EDICTO`,
+            content: edictContent
+        });
+    }
+
+    return edicts;
 }
 
 function extractTextPromise(pdfPath) {
