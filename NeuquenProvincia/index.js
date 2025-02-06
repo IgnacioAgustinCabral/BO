@@ -1,97 +1,56 @@
-const pdf = require("pdf-parse");
-const extract = require('pdf-text-extract');const fs = require("node:fs");
+const extract = require('pdf-text-extract');
+const fs = require("node:fs");
 module.exports = async function NeuquenCapitalPDF(pdfBuffer) {
-    /*const pdfData = await pdf(pdfBuffer);
-    let text = pdfData.text;
+    try {
+        const pdfPath = "temp.pdf";
+        fs.writeFileSync(pdfPath, pdfBuffer);
+        let text = await extractTextPromise(pdfPath);
 
-    text = text.replace(/Directora General:[\s\S]*?\(8300\) Neuquén \(Cap\.\)/gm, '')
-        .replace(/\t/g, ' ')
-        .replace(/ {2,}/g, ' ')
-        .replace(/([A-ZÁÉÍÓÚa-záéíóú0-9])-\n/g, '$1')
-        .replace(/SIN EXCEPCI[OÓ]N[\s\S]*?[AÁ]rea Corrección[\s\S]*?\./g, '')
-        .replace(/SUMARIO[\s\S]*?Boletín Oficial y Archivo\.\n/g, '')
-        .replace(/INFORMACI[OÓ]N IMPORTANTE[\s\S]*?edición siguiente\.\n/g, '');
+        text = text.replace(/INFORMACI[OÓ]N IMPORTANTE\n[\s\S]*?Direcci[oó]n General del Bolet[ií]n Oficial y Archivo\./gm, '')
+            .replace(/Neuqu[eé]n, \d+ de \w+ de \d+[\s\S]*?BOLET[IÍ]N[\s\S]*?P[AÁ]GINA \d+/gm, '');
 
-    const regex = /(P[AÁ]GINA \d+[\s\S]*?BOLET[IÍ]N OFICIAL\n)([\s\S]*?)(?=(P[AÁ]GINA \d+[\s\S]*?BOLET[IÍ]N OFICIAL\n|$))/g;
+        const sectionsRegex = /(DIRECCI[OÓ]N PROVINCIAL DE MINER[ÍI]A|CONTRATOS|LICITACIONES|CONVOCATORIAS|EDICTOS|AVISOS|NORMAS LEGALES|LEYES DE LA PROVINCIA|DECRETOS SINTETIZADOS|DECRETOS DE LA PROVINCIA|ACUERDOS DEL TRIBUNAL DE CUENTAS)([\s\S]*?)(?=(DIRECCI[OÓ]N PROVINCIAL DE MINER[ÍI]A|CONTRATOS|LICITACIONES|CONVOCATORIAS|EDICTOS|AVISOS|NORMAS LEGALES|LEYES DE LA PROVINCIA|DECRETOS SINTETIZADOS|DECRETOS DE LA PROVINCIA|ACUERDOS DEL TRIBUNAL DE CUENTAS)|$)/g;
+        const sections = [];
+        let match;
 
-    const titlesRegex = /(DIRECCI[OÓ]N PROVINCIAL DE MINER[ÍI]A|CONTRATOS|LICITACIONES|CONVOCATORIAS|EDICTOS|AVISOS|NORMAS LEGALES|LEYES DE LA PROVINCIA|DECRETOS SINTETIZADOS|DECRETOS DE LA PROVINCIA|ACUERDOS DEL TRIBUNAL DE CUENTAS)/;
-    let newText = "";
-
-    [...text.matchAll(regex)].forEach(match => {
-        let header = match[1];
-        let content = match[2].trim();
-
-        // get last row
-        const lineas = content.split("\n");
-        const lastRow = lineas[lineas.length - 1].trim();
-
-        // if in list put it at the start
-        if (titlesRegex.test(lastRow)) {
-            content = lastRow + "\n" + content.replace(lastRow, "").trim();
+        while ((match = sectionsRegex.exec(text)) !== null) {
+            const sectionName = match[1].trim();
+            const sectionContent = match[2].trim();
+            sections.push({
+                sectionName: sectionName,
+                sectionContent: sectionContent
+            });
         }
 
-        newText += header + content + "\n\n";
-    });
-
-    newText = newText.replace(/\n?P[AÁ]GINA \d+[\s\S]*?BOLET[IÍ]N OFICIAL\n/g, '');
-
-    const sectionsRegex = /(DIRECCI[OÓ]N PROVINCIAL DE MINER[ÍI]A|CONTRATOS|LICITACIONES|CONVOCATORIAS|EDICTOS|AVISOS|NORMAS LEGALES|LEYES DE LA PROVINCIA|DECRETOS SINTETIZADOS|DECRETOS DE LA PROVINCIA|ACUERDOS DEL TRIBUNAL DE CUENTAS)([\s\S]*?)(?=(DIRECCI[OÓ]N PROVINCIAL DE MINER[ÍI]A|CONTRATOS|LICITACIONES|CONVOCATORIAS|EDICTOS|AVISOS|NORMAS LEGALES|LEYES DE LA PROVINCIA|DECRETOS SINTETIZADOS|DECRETOS DE LA PROVINCIA|ACUERDOS DEL TRIBUNAL DE CUENTAS)|$)/g;
-    const sections = [];
-
-    let match;
-
-    while ((match = sectionsRegex.exec(newText)) !== null) {
-        const sectionName = match[1].trim();
-        const sectionContent = match[2].trim();
-
-        sections.push({
-            sectionName: sectionName,
-            sectionContent: sectionContent
+        const sectionProcessors = {
+            /*'DIRECCIÓN PROVINCIAL DE MINERÍA': processDireccionMineria,
+            'CONTRATOS': processContratos,
+            'LICITACIONES': processLicitaciones,
+            'CONVOCATORIAS': processConvocatorias,
+            'EDICTOS': processEdicts,
+            'AVISOS': processAvisos,
+            'NORMAS LEGALES': processNormasLegales,
+            'LEYES DE LA PROVINCIA': processLaws,*/
+            'DECRETOS SINTETIZADOS': processSynthesizedDecrees,
+            /*'DECRETOS DE LA PROVINCIA': processDecrees,
+            'ACUERDOS DEL TRIBUNAL DE CUENTAS': processAcuerdos,*/
+        };
+        let content = [];
+        sections.forEach(({sectionName, sectionContent}) => {
+            if (/DIRECCI[OÓ]N PRONINCIAL DE MINER[IÍ]A/.test(sectionName)) {
+                sectionName = 'DIRECCIÓN PROVINCIAL DE MINERÍA';
+            }
+            const processor = sectionProcessors[sectionName];
+            if (processor) {
+                content.push(...processor(sectionName, sectionContent));
+            }
         });
+
+        return content;
+
+    } catch (error) {
+        console.error("Error extrayendo el texto:", error);
     }
-
-    const sectionProcessors = {
-        /!*'DIRECCIÓN PROVINCIAL DE MINERÍA': processDireccionMineria,
-        'CONTRATOS': processContratos,
-        'LICITACIONES': processLicitaciones,
-        'CONVOCATORIAS': processConvocatorias,
-        'EDICTOS': processEdicts,
-        'AVISOS': processAvisos,
-        'NORMAS LEGALES': processNormasLegales,
-        'LEYES DE LA PROVINCIA': processLaws,*!/
-        'DECRETOS SINTETIZADOS': processSynthesizedDecrees,
-        /!*'DECRETOS DE LA PROVINCIA': processDecrees,
-        'ACUERDOS DEL TRIBUNAL DE CUENTAS': processAcuerdos,*!/
-    };
-
-    let content = [];
-    sections.forEach(({sectionName, sectionContent}) => {
-        if (/DIRECCI[OÓ]N PRONINCIAL DE MINER[IÍ]A/.test(sectionName)) {
-            sectionName = 'DIRECCIÓN PROVINCIAL DE MINERÍA';
-        }
-        const processor = sectionProcessors[sectionName];
-        if (processor) {
-            content.push(...processor(sectionName, sectionContent));
-        }
-
-    });
-
-    return content;*/
-    const pdfPath = "temp.pdf";
-    fs.writeFileSync(pdfPath, pdfBuffer);
-
-    extract(pdfPath, { splitPages: false }, (err, text) => {
-        if (err) {
-            console.error("Error extrayendo el texto:", err);
-            return;
-        }
-
-        // console.log("Texto extraído:\n", text);
-
-        // Guardar en un archivo .txt si lo deseas
-        fs.writeFileSync("output.txt", text.join("\n"));
-
-    });
 };
 
 function processSynthesizedDecrees(sectionName, content) {
@@ -113,4 +72,21 @@ function processSynthesizedDecrees(sectionName, content) {
 
     return synthesizedDecrees;
 
+}
+
+
+function extractTextPromise(pdfPath) {
+    return new Promise((resolve, reject) => {
+        extract(pdfPath, {splitPages: false}, (err, text) => {
+            if (err) {
+                fs.unlinkSync(pdfPath);
+                return reject("Error extrayendo el texto: " + err);
+            }
+
+            const extractedText = text.join("\n");
+            fs.unlinkSync(pdfPath); // removes temp file
+
+            resolve(extractedText);
+        });
+    });
 }
