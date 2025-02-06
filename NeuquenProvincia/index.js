@@ -23,17 +23,17 @@ module.exports = async function NeuquenCapitalPDF(pdfBuffer) {
         }
 
         const sectionProcessors = {
-            /*'DIRECCIÓN PROVINCIAL DE MINERÍA': processDireccionMineria,
+            // 'DIRECCIÓN PROVINCIAL DE MINERÍA': processDireccionMineria,
             'CONTRATOS': processContratos,
-            'LICITACIONES': processLicitaciones,
-            'CONVOCATORIAS': processConvocatorias,
-            'EDICTOS': processEdicts,
-            'AVISOS': processAvisos,
-            'NORMAS LEGALES': processNormasLegales,
-            'LEYES DE LA PROVINCIA': processLaws,*/
+            // 'LICITACIONES': processLicitaciones,
+            // 'CONVOCATORIAS': processConvocatorias,
+            // 'EDICTOS': processEdicts,
+            // 'AVISOS': processAvisos,
+            // 'NORMAS LEGALES': processNormasLegales,
+            // 'LEYES DE LA PROVINCIA': processLaws,
             'DECRETOS SINTETIZADOS': processSynthesizedDecrees,
-            /*'DECRETOS DE LA PROVINCIA': processDecrees,
-            'ACUERDOS DEL TRIBUNAL DE CUENTAS': processAcuerdos,*/
+            // 'DECRETOS DE LA PROVINCIA': processDecrees,
+            // 'ACUERDOS DEL TRIBUNAL DE CUENTAS': processAcuerdos,
         };
         let content = [];
         sections.forEach(({sectionName, sectionContent}) => {
@@ -74,6 +74,23 @@ function processSynthesizedDecrees(sectionName, content) {
 
 }
 
+function processContratos(sectionName, content) {
+    const contratoRegex = /([\s\S]+?)(?=____________|$)/g;
+    let match;
+    const contratos = [];
+
+    while ((match = contratoRegex.exec(content)) !== null) {
+        const contratoContent = match[0].replace(/____________/g, '')
+            .trim();
+
+        contratos.push({
+            title: `Auditoría Legislativa - CONTRATOS - ${sectionName}`,
+            content: contratoContent
+        });
+    }
+
+    return contratos;
+}
 
 function extractTextPromise(pdfPath) {
     return new Promise((resolve, reject) => {
