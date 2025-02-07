@@ -33,7 +33,7 @@ module.exports = async function NeuquenCapitalPDF(pdfBuffer) {
             // 'LEYES DE LA PROVINCIA': processLaws,
             'DECRETOS SINTETIZADOS': processSynthesizedDecrees,
             // 'DECRETOS DE LA PROVINCIA': processDecrees,
-            // 'ACUERDOS DEL TRIBUNAL DE CUENTAS': processAcuerdos,
+            'ACUERDOS DEL TRIBUNAL DE CUENTAS': processAcuerdos,
         };
         let content = [];
         sections.forEach(({sectionName, sectionContent}) => {
@@ -175,6 +175,26 @@ function processDireccionMineria(sectionName, content) {
     }
 
     return direccionesMineria;
+}
+
+function processAcuerdos(sectionName, content) {
+    content = content.replace(/\s*_{5,15}\s*/g, '\n__________\n');// clean up the section separator
+
+    const acuerdoRegex = /ACUERDO \w+-(\d+)[\s\S]*?(?=(ACUERDO \w+-\d+|$))/g;
+    let match;
+    const acuerdos = [];
+
+    while ((match = acuerdoRegex.exec(content)) !== null) {
+        const acuerdoContent = match[0].replace(/____________/g, '')
+            .trim();
+        const acuerdoNumber = match[1];
+        acuerdos.push({
+            title: `Auditoría Legislativa - ${sectionName} - ACUERDO N° ${acuerdoNumber}`,
+            content: acuerdoContent
+        });
+    }
+
+    return acuerdos;
 }
 
 function extractTextPromise(pdfPath) {
