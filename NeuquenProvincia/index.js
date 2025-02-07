@@ -6,8 +6,9 @@ module.exports = async function NeuquenCapitalPDF(pdfBuffer) {
         fs.writeFileSync(pdfPath, pdfBuffer);
         let text = await extractTextPromise(pdfPath);
 
-        text = text.replace(/INFORMACI[OÓ]N IMPORTANTE\n[\s\S]*?Direcci[oó]n General del Bolet[ií]n Oficial y Archivo\./gm, '')
-            .replace(/Neuqu[eé]n, \d+ de \w+ de \d+[\s\S]*?BOLET[IÍ]N[\s\S]*?P[AÁ]GINA \d+/gm, '');
+        text = text.replace(/(INFORMACI[OÓ]N IMPORTANTE\n[\s\S]*?)?Direcci[oó]n General del Bolet[ií]n Oficial y Archivo\./gm, '')
+            .replace(/SUMARIO[\s\S]*?Direcci[oó]n General del Bolet[ií]n Oficial y Archivo\./gm, '')
+            .replace(/Neuqu[eé]n, \d+ de \w+ de \d+ *BOLET[IÍ]N OFICIAL *PÁGINA \d+/gm, '');
 
         const sectionsRegex = /(DIRECCI[OÓ]N PROVINCIAL DE MINER[ÍI]A|CONTRATOS|LICITACIONES|CONVOCATORIAS|EDICTOS|AVISOS|NORMAS LEGALES|LEYES DE LA PROVINCIA|DECRETOS SINTETIZADOS|DECRETOS DE LA PROVINCIA|ACUERDOS DEL TRIBUNAL DE CUENTAS)([\s\S]*?)(?=(DIRECCI[OÓ]N PROVINCIAL DE MINER[ÍI]A|CONTRATOS|LICITACIONES|CONVOCATORIAS|EDICTOS|AVISOS|NORMAS LEGALES|LEYES DE LA PROVINCIA|DECRETOS SINTETIZADOS|DECRETOS DE LA PROVINCIA|ACUERDOS DEL TRIBUNAL DE CUENTAS)|$)/g;
         const sections = [];
@@ -32,7 +33,7 @@ module.exports = async function NeuquenCapitalPDF(pdfBuffer) {
             // 'NORMAS LEGALES': processNormasLegales,
             // 'LEYES DE LA PROVINCIA': processLaws,
             'DECRETOS SINTETIZADOS': processSynthesizedDecrees,
-            // 'DECRETOS DE LA PROVINCIA': processDecrees,
+            'DECRETOS DE LA PROVINCIA': processDecrees,
             'ACUERDOS DEL TRIBUNAL DE CUENTAS': processAcuerdos,
         };
         let content = [];
@@ -214,6 +215,33 @@ function processConvocatorias(sectionName, content) {
     }
 
     return convocatorias;
+}
+
+function processDecrees(sectionName, content) {
+    content = content.replace(/\s*_{5,15}\s*/g, '\n__________\n')// clean up the section separator
+        .replace(/\n\n\n\n/gm, ' ');
+
+    const decreeRegex = /DECRETO N[°º] (\d+)\n[\s\S]*?(?=(DECRETO N[°º] \d+\n|$))/g;
+    let match;
+    const decrees = [];
+
+    while ((match = decreeRegex.exec(content)) !== null) {
+        const decreeContent = match[0].replace(/____________/g, '')
+            .replace(/VISTO:[\s\S]*?; y\n/gm, match => {
+                return match.replace(/(?<!y)\n/g, ' ');
+            })
+            .replace(/Que[\s\S]*?;\n/gm, match => {
+                return match.replace(/(?<!;)\n/g, ' ');
+            })
+            .trim();
+        const decreeNumber = match[1];
+        decrees.push({
+            title: `Auditoría Legislativa - ${sectionName} - DECRETO N° ${decreeNumber}`,
+            content: decreeContent
+        });
+    }
+
+    return decrees;
 }
 
 function extractTextPromise(pdfPath) {
