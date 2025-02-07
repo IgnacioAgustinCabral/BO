@@ -23,7 +23,7 @@ module.exports = async function NeuquenCapitalPDF(pdfBuffer) {
         }
 
         const sectionProcessors = {
-            // 'DIRECCIÓN PROVINCIAL DE MINERÍA': processDireccionMineria,
+            'DIRECCIÓN PROVINCIAL DE MINERÍA': processDireccionMineria,
             'CONTRATOS': processContratos,
             'LICITACIONES': processLicitaciones,
             // 'CONVOCATORIAS': processConvocatorias,
@@ -95,18 +95,24 @@ function processContratos(sectionName, content) {
 }
 
 function processLicitaciones(sectionName, content) {
-    content = content.replace(/\s*_{5,15}\s*/g, '\n__________\n');// clean up the section separator
+    content = content.replace(/\s*_{5,15}\s*/g, '\n__________\n'); // Clean up the section separator
 
     const licitacionRegex = /([\s\S]+?)(?=__________|$)/g;
     let match;
     const licitaciones = [];
 
     while ((match = licitacionRegex.exec(content)) !== null) {
-        const licitacionContent = match[0].replace(/____________/g, '')
-            .trim();
-        const licitacionNumber = licitacionContent.match(/Licitaci[oó]n P[uú]blica N[°º] (\d+)\/\d+/)[1];
+        const licitacionContent = match[0].replace(/____________/g, '').trim();
+
+        const licitacionMatch = licitacionContent.match(/Licitaci[oó]n P[uú]blica N[°º] (\d+)\/\d+/);
+        const licitacionNumber = licitacionMatch ? licitacionMatch[1] : null;
+
+        const title = licitacionNumber
+            ? `Auditoría Legislativa - ${sectionName} - LICITACIÓN N° ${licitacionNumber}`
+            : `Auditoría Legislativa - ${sectionName} - LICITACIÓN`;
+
         licitaciones.push({
-            title: `Auditoría Legislativa - ${sectionName} - LICITACIÓN N° ${licitacionNumber}`,
+            title,
             content: licitacionContent
         });
     }
@@ -150,6 +156,25 @@ function processAvisos(sectionName, content) {
     }
 
     return avisos;
+}
+
+function processDireccionMineria(sectionName, content) {
+    content = content.replace(/\s*_{5,15}\s*/g, '\n__________\n');// clean up the section separator
+
+    const direccionMineriaRegex = /([\s\S]+?)(?=__________|$)/g;
+    let match;
+    const direccionesMineria = [];
+
+    while ((match = direccionMineriaRegex.exec(content)) !== null) {
+        const direccionMineriaContent = match[0].replace(/____________/g, '')
+            .trim();
+        direccionesMineria.push({
+            title: `Auditoría Legislativa - ${sectionName} - DIRECCIÓN PROVINCIAL DE MINERÍA`,
+            content: direccionMineriaContent
+        });
+    }
+
+    return direccionesMineria;
 }
 
 function extractTextPromise(pdfPath) {
