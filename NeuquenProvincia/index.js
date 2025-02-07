@@ -31,7 +31,7 @@ module.exports = async function NeuquenCapitalPDF(pdfBuffer) {
             'EDICTOS': processEdicts,
             'AVISOS': processAvisos,
             // 'NORMAS LEGALES': processNormasLegales,
-            // 'LEYES DE LA PROVINCIA': processLaws,
+            'LEYES DE LA PROVINCIA': processLaws,
             'DECRETOS SINTETIZADOS': processSynthesizedDecrees,
             'DECRETOS DE LA PROVINCIA': processDecrees,
             'ACUERDOS DEL TRIBUNAL DE CUENTAS': processAcuerdos,
@@ -218,7 +218,7 @@ function processConvocatorias(sectionName, content) {
 }
 
 function processDecrees(sectionName, content) {
-    content = content.replace(/\s*_{5,15}\s*/g, '\n__________\n')// clean up the section separator
+    content = content.replace(/\s*_{5,15}\s*/g, '\n')// clean up the section separator
         .replace(/\n\n\n\n/gm, ' ');
 
     const decreeRegex = /DECRETO N[°º] (\d+)\n[\s\S]*?(?=(DECRETO N[°º] \d+\n|$))/g;
@@ -226,10 +226,9 @@ function processDecrees(sectionName, content) {
     const decrees = [];
 
     while ((match = decreeRegex.exec(content)) !== null) {
-        const decreeContent = match[0].replace(/____________/g, '')
-            .replace(/VISTO:[\s\S]*?; y\n/gm, match => {
-                return match.replace(/(?<!y)\n/g, ' ');
-            })
+        const decreeContent = match[0].replace(/VISTO:[\s\S]*?; y\n/gm, match => {
+            return match.replace(/(?<!y)\n/g, ' ');
+        })
             .replace(/Que[\s\S]*?;\n/gm, match => {
                 return match.replace(/(?<!;)\n/g, ' ');
             })
@@ -242,6 +241,26 @@ function processDecrees(sectionName, content) {
     }
 
     return decrees;
+}
+
+function processLaws(sectionName, content) {
+    content = content.replace(/\s*_{5,15}\s*/g, '\n')// clean up the section separator
+        .replace(/\n\n\n\n/gm, ' ');
+
+    const lawRegex = /LEY N[°º] (\d+)[\s\S]*?(?=LEY N[°º] \d+|$)/g;
+    let match;
+    const laws = [];
+
+    while ((match = lawRegex.exec(content)) !== null) {
+        const lawContent = match[0].trim();
+        const lawNumber = match[1];
+        laws.push({
+            title: `Auditoría Legislativa - ${sectionName} - LEY N° ${lawNumber}`,
+            content: lawContent
+        });
+    }
+
+    return laws;
 }
 
 function extractTextPromise(pdfPath) {
