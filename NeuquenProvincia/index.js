@@ -26,7 +26,7 @@ module.exports = async function NeuquenCapitalPDF(pdfBuffer) {
             'DIRECCIÓN PROVINCIAL DE MINERÍA': processDireccionMineria,
             'CONTRATOS': processContratos,
             'LICITACIONES': processLicitaciones,
-            // 'CONVOCATORIAS': processConvocatorias,
+            'CONVOCATORIAS': processConvocatorias,
             'EDICTOS': processEdicts,
             'AVISOS': processAvisos,
             // 'NORMAS LEGALES': processNormasLegales,
@@ -195,6 +195,25 @@ function processAcuerdos(sectionName, content) {
     }
 
     return acuerdos;
+}
+
+function processConvocatorias(sectionName, content) {
+    content = content.replace(/\s*_{5,15}\s*/g, '\n__________\n');// clean up the section separator
+
+    const convocatoriaRegex = /([\s\S]+?)(?=__________|$)/g;
+    let match;
+    const convocatorias = [];
+
+    while ((match = convocatoriaRegex.exec(content)) !== null) {
+        const convocatoriaContent = match[0].replace(/____________/g, '')
+            .trim();
+        convocatorias.push({
+            title: `Auditoría Legislativa - ${sectionName} - CONVOCATORIA`,
+            content: convocatoriaContent
+        });
+    }
+
+    return convocatorias;
 }
 
 function extractTextPromise(pdfPath) {
