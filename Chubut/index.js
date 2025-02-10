@@ -79,7 +79,7 @@ module.exports = async function parseChubutPDF(pdfBuffer) {
         console.error("Error al procesar el PDF:", error);
         return [];
     }
-}
+};
 
 function processProvincialLaws(sectionContent) {
     const lawRegex = /(?:(?!Lic\. IGNACIO AGUSTÍN TORRES\nDr\. VICTORIANO ERASO PARODI?).)+Lic\. IGNACIO AGUSTÍN TORRES\nDr\. VICTORIANO ERASO PARODI?/gs;
@@ -313,7 +313,7 @@ function processSynthesizedDisposition(sectionContent) {
     const formattedContent = formatSection(sectionContent, regex);
     const replacement = {
         'SUBSECRETARÍA DE AUTOTRANSPORTE\nTERRESTRE\n': 'SUBSECRETARÍA DE AUTOTRANSPORTE TERRESTRE\n',
-    }
+    };
     const normalizedContent = replaceSubsectionTitles(formattedContent, replacement);
 
     const subsectionsRegex = /(SUBSECRETAR[ÍI]A DE MINER[ÍI]A|SUBSECRETAR[ÍI]A DE AUTOTRANSPORTE TERRESTRE\n|DIRECCI[ÓO]N GENERAL DE POL[ÍI]TICA FORESTAL\n)([\s\S]*?)(?=(?!\1)(SUBSECRETAR[ÍI]A DE MINER[ÍI]A|SUBSECRETAR[ÍI]A DE AUTOTRANSPORTE TERRESTRE\n|DIRECCI[ÓO]N GENERAL DE POL[ÍI]TICA FORESTAL\n|$))/gs;
@@ -405,7 +405,7 @@ function processDictamenes(sectionContent) {
 function processDeclarations(sectionContent) {
     const replacements = {
         'HONORABLE LEGISLATURA DE LA\nPROVINCIA DEL CHUBUT\n': 'HONORABLE LEGISLATURA DE LA PROVINCIA DEL CHUBUT\n',
-    }
+    };
     const normalizedContent = replaceSubsectionTitles(sectionContent, replacements);
 
     const subsectionsRegex = /(HONORABLE LEGISLATURA DE LA PROVINCIA DEL CHUBUT\n)([\s\S]*?)(?=(?!\1)(HONORABLE LEGISLATURA DE LA PROVINCIA DEL CHUBUT\n|$))/gs;
@@ -454,7 +454,7 @@ function processDispositions(sectionContent) {
             dispositionContent = dispositionContent.replace(/([^;:])\n/g, '$1 ')
                 .replace(/(Artículo\s+\d+[°º]\.-\s.*?)([\s\S]*?)(?=\s*Artículo\s+\d+[°º]\.-|$)/g, '$1$2\n\n')
                 .replace(/([.,] )([a-z]\))/g, '$1\n$2')
-                .replace(/(\s)(\d+\.-)/g, '$1\n$2')
+                .replace(/(\s)(\d+\.-)/g, '$1\n$2');
 
             while ((titleMatch = dispositionRegex.exec(dispositionContent)) !== null) {
                 dispositions.push({
@@ -510,7 +510,7 @@ function processGeneralSection(sectionContent) {
     while ((match = regex.exec(sectionContent)) !== null) {
         sections.push({
             title: 'Auditoría Legislativa - ' + 'Sección General - ' + match[1].replace(/\n/g, ' ').trim(),
-            content: match[2].trim() + '\n' + match[3].trim()
+            content: match[2].replace(/\n/gm, ' ').trim() + '\n' + match[3].trim()
         });
     }
     return sections;
