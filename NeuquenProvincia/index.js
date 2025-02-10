@@ -8,7 +8,9 @@ module.exports = async function parseNeuquenProvinciaPDF(pdfBuffer) {
 
         text = text.replace(/(INFORMACI[OÓ]N IMPORTANTE\n[\s\S]*?)?Direcci[oó]n General del Bolet[ií]n Oficial y Archivo\./gm, '')
             .replace(/SUMARIO[\s\S]*?Direcci[oó]n General del Bolet[ií]n Oficial y Archivo\./gm, '')
-            .replace(/Neuqu[eé]n, \d+ de \w+ de \d+ *BOLET[IÍ]N OFICIAL *PÁGINA \d+/gm, '');
+            .replace(/Neuqu[eé]n, \d+ de \w+ de \d+ *BOLET[IÍ]N OFICIAL *PÁGINA \d+/gm, '')
+            .replace(/\n\n\n\n/gm, '\n')
+            .replace(/([a-záéíóú])-\n([a-záéíóú]+)/gm, '$1$2\n');
 
         const sectionsRegex = /(DIRECCI[OÓ]N PROVINCIAL DE MINER[ÍI]A|CONTRATOS|LICITACIONES|CONVOCATORIAS|EDICTOS|AVISOS|NORMAS LEGALES|LEYES DE LA PROVINCIA|DECRETOS SINTETIZADOS|DECRETOS DE LA PROVINCIA|ACUERDOS DEL TRIBUNAL DE CUENTAS)([\s\S]*?)(?=(DIRECCI[OÓ]N PROVINCIAL DE MINER[ÍI]A|CONTRATOS|LICITACIONES|CONVOCATORIAS|EDICTOS|AVISOS|NORMAS LEGALES|LEYES DE LA PROVINCIA|DECRETOS SINTETIZADOS|DECRETOS DE LA PROVINCIA|ACUERDOS DEL TRIBUNAL DE CUENTAS)|$)/g;
         const sections = [];
@@ -63,7 +65,9 @@ function processSynthesizedDecrees(sectionName, content) {
 
     while ((match = synthesizedDecreeRegex.exec(content)) !== null) {
         const decreeNumber = match[1];
-        const decreeContent = match[0].trim();
+        const decreeContent = match[0]
+            .replace(/\n/gm, ' ')
+            .trim();
 
         synthesizedDecrees.push({
             title: `Auditoría Legislativa - DECRETOS SINTETIZADOS - DECRETO N° ${decreeNumber}`,
@@ -83,7 +87,8 @@ function processContratos(sectionName, content) {
     const contratos = [];
 
     while ((match = contratoRegex.exec(content)) !== null) {
-        const contratoContent = match[0].replace(/____________/g, '')
+        const contratoContent = match[0].replace(/__________/g, '')
+            .replace(/\n/gm, ' ')
             .trim();
 
         contratos.push({
@@ -103,7 +108,9 @@ function processLicitaciones(sectionName, content) {
     const licitaciones = [];
 
     while ((match = licitacionRegex.exec(content)) !== null) {
-        const licitacionContent = match[0].replace(/____________/g, '').trim();
+        const licitacionContent = match[0].replace(/__________/g, '')
+            .replace(/\n/gm, ' ')
+            .trim();
 
         const licitacionMatch = licitacionContent.match(/Licitaci[oó]n P[uú]blica N[°º] (\d+)\/\d+/);
         const licitacionNumber = licitacionMatch ? licitacionMatch[1] : null;
@@ -113,7 +120,7 @@ function processLicitaciones(sectionName, content) {
             : `Auditoría Legislativa - ${sectionName} - LICITACIÓN`;
 
         licitaciones.push({
-            title,
+            title:title,
             content: licitacionContent
         });
     }
@@ -129,7 +136,8 @@ function processEdicts(sectionName, content) {
     const edicts = [];
 
     while ((match = edictRegex.exec(content)) !== null) {
-        const edictContent = match[0].replace(/____________/g, '')
+        const edictContent = match[0].replace(/__________/g, '')
+            .replace(/\n/gm, ' ')
             .trim();
         edicts.push({
             title: `Auditoría Legislativa - ${sectionName} - EDICTO`,
@@ -148,7 +156,8 @@ function processAvisos(sectionName, content) {
     const avisos = [];
 
     while ((match = avisoRegex.exec(content)) !== null) {
-        const avisoContent = match[0].replace(/____________/g, '')
+        const avisoContent = match[0].replace(/__________/g, '')
+            .replace(/\n/gm, ' ')
             .trim();
         avisos.push({
             title: `Auditoría Legislativa - ${sectionName} - AVISO`,
@@ -167,7 +176,8 @@ function processDireccionMineria(sectionName, content) {
     const direccionesMineria = [];
 
     while ((match = direccionMineriaRegex.exec(content)) !== null) {
-        const direccionMineriaContent = match[0].replace(/____________/g, '')
+        const direccionMineriaContent = match[0].replace(/__________/g, '')
+            .replace(/\n/gm, ' ')
             .trim();
         direccionesMineria.push({
             title: `Auditoría Legislativa - ${sectionName} - DIRECCIÓN PROVINCIAL DE MINERÍA`,
@@ -186,7 +196,8 @@ function processAcuerdos(sectionName, content) {
     const acuerdos = [];
 
     while ((match = acuerdoRegex.exec(content)) !== null) {
-        const acuerdoContent = match[0].replace(/____________/g, '')
+        const acuerdoContent = match[0].replace(/__________/g, '')
+            .replace(/\n/gm, ' ')
             .trim();
         const acuerdoNumber = match[1];
         acuerdos.push({
@@ -206,7 +217,9 @@ function processConvocatorias(sectionName, content) {
     const convocatorias = [];
 
     while ((match = convocatoriaRegex.exec(content)) !== null) {
-        const convocatoriaContent = match[0].replace(/____________/g, '')
+        const convocatoriaContent = match[0].replace(/__________/g, '')
+            .replace(/\n/gm, ' ')
+            .replace(/([0-9]+\)[\s\S]*?\.)/gm, '\n$1')
             .trim();
         convocatorias.push({
             title: `Auditoría Legislativa - ${sectionName} - CONVOCATORIA`,
@@ -218,8 +231,7 @@ function processConvocatorias(sectionName, content) {
 }
 
 function processDecrees(sectionName, content) {
-    content = content.replace(/\s*_{5,15}\s*/g, '\n')// clean up the section separator
-        .replace(/\n\n\n\n/gm, ' ');
+    content = content.replace(/\s*_{5,15}\s*/g, '\n');// clean up the section separator
 
     const decreeRegex = /DECRETO N[°º] (\d+)\n[\s\S]*?(?=(DECRETO N[°º] \d+\n|$))/g;
     let match;
@@ -244,8 +256,7 @@ function processDecrees(sectionName, content) {
 }
 
 function processLaws(sectionName, content) {
-    content = content.replace(/\s*_{5,15}\s*/g, '\n')// clean up the section separator
-        .replace(/\n\n\n\n/gm, ' ');
+    content = content.replace(/\s*_{5,15}\s*/g, '\n');// clean up the section separator
 
     const lawRegex = /LEY N[°º] (\d+)[\s\S]*?(?=LEY N[°º] \d+|$)/g;
     let match;
