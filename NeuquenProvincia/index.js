@@ -1,6 +1,6 @@
 const extract = require('pdf-text-extract');
 const fs = require("node:fs");
-module.exports = async function NeuquenCapitalPDF(pdfBuffer) {
+module.exports = async function parseNeuquenProvinciaPDF(pdfBuffer) {
     try {
         const pdfPath = "temp.pdf";
         fs.writeFileSync(pdfPath, pdfBuffer);
