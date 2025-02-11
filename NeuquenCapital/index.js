@@ -10,7 +10,7 @@ module.exports = async function parseNeuquenCapitalPDF(pdfBuffer) {
             .replace(/\s*\d+\nBOLET[IÍ]N OFICIAL MUNICIPAL\s*EDICI[OÓ]N N[°º] \d+\s*NEUQU[EÉ]N[\s\S]*?\n\n/gm, '\n')// eliminates header
             .replace(/SUMARIO[\s\S]*?(?=DECRETOS SINTETIZADOS)/gm, '');// eliminates SUMARIO SECTION
 
-        const sectionsRegex = /(DECRETOS SINTETIZADOS|RESOLUCIONES SINTETIZADAS|DISPOSICIONES SINTETIZADAS|NORMAS COMPLETAS)([\s\S]*?)(?=(DECRETOS SINTETIZADOS|RESOLUCIONES SINTETIZADAS|DISPOSICIONES SINTETIZADAS|NORMAS COMPLETAS|$))/g;
+        const sectionsRegex = /(DECRETOS SINTETIZADOS|RESOLUCIONES SINTETIZADAS|DISPOSICIONES SINTET?IZADAS|NORMAS COMPLETAS)([\s\S]*?)(?=(DECRETOS SINTETIZADOS|RESOLUCIONES SINTETIZADAS|DISPOSICIONES SINTET?IZADAS|NORMAS COMPLETAS|$))/g;
         const sections = [];
         let match;
 
@@ -26,13 +26,17 @@ module.exports = async function parseNeuquenCapitalPDF(pdfBuffer) {
         const sectionProcessors = {
             'DECRETOS SINTETIZADOS': processSynthesizedDecrees,
             'RESOLUCIONES SINTETIZADAS': processResolucionesSintetizadas,
-            // 'DISPOSICIONES SINTETIZADAS': processDisposicionesSintetizadas,
+            'DISPOSICIONES SINTETIZADAS': processDisposicionesSintetizadas,
             // 'NORMAS COMPLETAS': processNormasCompletas,
         };
 
         let content = [];
         sections.forEach(({sectionName, sectionContent}) => {
+            if (/DISPOSICIONES SINTEIZADAS/.test(sectionName)) {
+                sectionName = 'DISPOSICIONES SINTETIZADAS';
+            }
             const processor = sectionProcessors[sectionName];
+
             if (processor) {
                 content.push(...processor(sectionName, sectionContent));
             }
@@ -78,4 +82,22 @@ function processResolucionesSintetizadas(sectionName, content) {
     }
 
     return resolutions;
+}
+
+function processDisposicionesSintetizadas(sectionName, content) {
+    const dispositionRegex = /DISPOSICI[ÓO]N N[°º] (\d+)\/\d+[\s\S]*?.-\n/g;
+    const dispositions = [];
+    let match;
+
+    while ((match = dispositionRegex.exec(content)) !== null) {
+        const dispositionNumber = match[1];
+        const dispositionContent = match[0].replace(/\n/g, ' ')
+            .trim();
+        dispositions.push({
+            title: `Auditoría Legislativa - DISPOSICIONES SINTETIZADAS - DISPOSICIÓN N° ${dispositionNumber}`,
+            content: dispositionContent
+        });
+    }
+
+    return dispositions;
 }
