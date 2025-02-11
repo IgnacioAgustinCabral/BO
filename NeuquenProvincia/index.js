@@ -1,5 +1,5 @@
-const extract = require('pdf-text-extract');
 const fs = require("node:fs");
+const extractTextPromise = require('../utils/extractTextPromise');
 module.exports = async function parseNeuquenProvinciaPDF(pdfBuffer) {
     try {
         const pdfPath = "temp.pdf";
@@ -120,7 +120,7 @@ function processLicitaciones(sectionName, content) {
             : `Auditoría Legislativa - ${sectionName} - LICITACIÓN`;
 
         licitaciones.push({
-            title:title,
+            title: title,
             content: licitacionContent
         });
     }
@@ -272,20 +272,4 @@ function processLaws(sectionName, content) {
     }
 
     return laws;
-}
-
-function extractTextPromise(pdfPath) {
-    return new Promise((resolve, reject) => {
-        extract(pdfPath, {splitPages: false}, (err, text) => {
-            if (err) {
-                fs.unlinkSync(pdfPath);
-                return reject("Error extrayendo el texto: " + err);
-            }
-
-            const extractedText = text.join("\n");
-            fs.unlinkSync(pdfPath); // removes temp file
-
-            resolve(extractedText);
-        });
-    });
 }
