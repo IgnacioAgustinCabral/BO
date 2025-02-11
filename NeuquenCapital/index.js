@@ -25,7 +25,7 @@ module.exports = async function parseNeuquenCapitalPDF(pdfBuffer) {
 
         const sectionProcessors = {
             'DECRETOS SINTETIZADOS': processSynthesizedDecrees,
-            // 'RESOLUCIONES SINTETIZADAS': processResolucionesSintetizadas,
+            'RESOLUCIONES SINTETIZADAS': processResolucionesSintetizadas,
             // 'DISPOSICIONES SINTETIZADAS': processDisposicionesSintetizadas,
             // 'NORMAS COMPLETAS': processNormasCompletas,
         };
@@ -60,4 +60,22 @@ function processSynthesizedDecrees(sectionName, content) {
     }
 
     return decrees;
+}
+
+function processResolucionesSintetizadas(sectionName, content) {
+    const resolutionRegex = /RESOLUCI[ÓO]N N[°º] (\d+)\/\d+[\s\S]*?.-\n/g;
+    const resolutions = [];
+    let match;
+
+    while ((match = resolutionRegex.exec(content)) !== null) {
+        const resolutionNumber = match[1];
+        const resolutionContent = match[0].replace(/\n/g, ' ')
+            .trim();
+        resolutions.push({
+            title: `Auditoría Legislativa - RESOLUCIONES SINTETIZADAS - RESOLUCIÓN N° ${resolutionNumber}`,
+            content: resolutionContent
+        });
+    }
+
+    return resolutions;
 }
