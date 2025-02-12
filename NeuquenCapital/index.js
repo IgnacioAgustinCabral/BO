@@ -27,7 +27,7 @@ module.exports = async function parseNeuquenCapitalPDF(pdfBuffer) {
             'DECRETOS SINTETIZADOS': processSynthesizedDecrees,
             'RESOLUCIONES SINTETIZADAS': processResolucionesSintetizadas,
             'DISPOSICIONES SINTETIZADAS': processDisposicionesSintetizadas,
-            // 'NORMAS COMPLETAS': processNormasCompletas,
+            'NORMAS COMPLETAS': processNormasCompletas,
         };
 
         let content = [];
@@ -100,4 +100,42 @@ function processDisposicionesSintetizadas(sectionName, content) {
     }
 
     return dispositions;
+}
+
+function processNormasCompletas(sectionName, content) {
+    const regex = /(ORDENANZA N[°º] (\d+)\.-\n|D E C R E T O N[°º] *(\d+)\n)([\s\S]*?)(?=(ORDENANZA N[°º] \d+\.-\n|D E C R E T O N[°º] *\d+\n|$))/g;
+    const normas = [];
+    let match;
+
+    while ((match = regex.exec(content)) !== null) {
+        const content = match[0];
+
+        if (match[1].includes('ORDENANZA')) {
+            const ordenanzaNumber = match[2];
+            normas.push({
+                title: `Auditoría Legislativa - ORDENANZAS - ORDENANZA N° ${ordenanzaNumber}`,
+                content: content.replace(/Que[\s\S]*?\.\n/gm, match => {
+                    return match.replace(/(?<!\.)\n/g, ' ');
+                })
+                    .replace(/ART[IÍ]CULO \d+[°º][\s\S]*?\.-\n/gm, match => {
+                        return match.replace(/(?<!\.)\n/g, ' ');
+                    })
+                    .trim()
+            });
+        } else if (match[1].includes('D E C R E T O')) {
+            const decretoNumber = match[3];
+            normas.push({
+                title: `Auditoría Legislativa - DECRETOS - DECRETO N° ${decretoNumber}`,
+                content: content.replace(/Que[\s\S]*?;\n/gm, match => {
+                    return match.replace(/(?<!;)\n/g, ' ');
+                })
+                    .replace(/Art[ií]culo \d+[°º][\s\S]*?\.\n/gm, match => {
+                        return match.replace(/(?<!\.)\n/g, ' ');
+                    })
+                    .trim()
+            });
+        }
+    }
+
+    return normas;
 }
