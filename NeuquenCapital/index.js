@@ -5,42 +5,88 @@ module.exports = async function parseNeuquenCapitalPDF(pdfBuffer) {
         const pdfPath = "tempNeuquenCapital.pdf";
         fs.writeFileSync(pdfPath, pdfBuffer);
         let text = await extractTextPromise(pdfPath);
+        let content = [];
 
-        text = text.replace(/$/, '\n')// add \n at the end of the text
-            .replace(/\s*\d+\nBOLET[IÍ]N OFICIAL MUNICIPAL\s*EDICI[OÓ]N N[°º] \d+\s*NEUQU[EÉ]N[\s\S]*?\n\n/gm, '\n')// eliminates header
-            .replace(/SUMARIO[\s\S]*?(?=DECRETOS SINTETIZADOS)/gm, '');// eliminates SUMARIO SECTION
+        const specialBO = /EDICI[OÓ]N Nº \d+ \(ESPECIAL\)/;
+        if (specialBO.test(text)) {
+            text = text.replace(/$/, '\n')
+                .replace(/\s*\d+\n\s*BOLET[IÍ]N OFICIAL MUNICIPAL\s*EDICI[OÓ]N N[°º] \d+ \(ESPECIAL\)\s*BOLET[IÍ]N(?:OFIC(?:IAL)?)?\s*NEUQU[EÉ]N, \d+ DE \w+ DE \d+[\s\S]*?\n\n/g, '\n')
+                .replace(/BOLET[IÍ]N\nOFICIAL[\s\S]*?P[aá]ginas? \d+ a \d+\n\n?/gm, '');
+            const regex = /(ORDENANZA N[°º] (\d+)\.-\n|D E C R E T O N[°º] *(\d+)\n|EDICTO\n)/gm;
+            let match;
 
-        const sectionsRegex = /(DECRETOS SINTETIZADOS|RESOLUCIONES SINTETIZADAS|DISPOSICIONES SINTET?IZADAS|NORMAS COMPLETAS)([\s\S]*?)(?=(DECRETOS SINTETIZADOS|RESOLUCIONES SINTETIZADAS|DISPOSICIONES SINTET?IZADAS|NORMAS COMPLETAS|$))/g;
-        const sections = [];
-        let match;
+            while ((match = regex.exec(text)) !== null) {
+                if (match[1].includes('D E C R E T O')) {
+                    const decretoNumber = match[3];
+                    text.replace(/Que[\s\S]*?;\n/gm, match => {
+                        return match.replace(/(?<!;)\n/g, ' ');
+                    })
+                        .replace(/Art[ií]culo \d+[°º][\s\S]*?\.\n/gm, match => {
+                            return match.replace(/(?<!\.)\n/g, ' ');
+                        })
+                        .trim();
+                    content.push({
+                        title: `Auditoría Legislativa - DECRETOS - DECRETO N° ${decretoNumber}`,
+                        content: text
+                    });
+                } else if (match[1].includes('ORDENANZA')) {
+                    const ordenanzaNumber = match[2];
+                    text.replace(/Que[\s\S]*?\.\n/gm, match => {
+                        return match.replace(/(?<!\.)\n/g, ' ');
+                    })
+                        .replace(/ART[IÍ]CULO \d+[°º][\s\S]*?\.-\n/gm, match => {
+                            return match.replace(/(?<!\.)\n/g, ' ');
+                        })
+                        .trim();
+                    content.push({
+                        title: `Auditoría Legislativa - ORDENANZAS - ORDENANZA N° ${ordenanzaNumber}`,
+                        content: text
+                    });
+                } else if (match[1].includes('EDICTO')) {
+                    text.replace(/\n/g, ' ').trim();
+                    content.push({
+                        title: `Auditoría Legislativa - EDICTOS - EDICTO`,
+                        content: text
+                    });
+                }
+            }
+        } else {
 
-        while ((match = sectionsRegex.exec(text)) !== null) {
-            const sectionName = match[1].trim();
-            const sectionContent = match[2];
-            sections.push({
-                sectionName: sectionName,
-                sectionContent: sectionContent
+            text = text.replace(/$/, '\n')// add \n at the end of the text
+                .replace(/\s*\d+\nBOLET[IÍ]N OFICIAL MUNICIPAL\s*EDICI[OÓ]N N[°º] \d+\s*NEUQU[EÉ]N[\s\S]*?\n\n/gm, '\n')// eliminates header
+                .replace(/SUMARIO[\s\S]*?(?=DECRETOS SINTETIZADOS)/gm, '');// eliminates SUMARIO SECTION
+
+            const sectionsRegex = /(DECRETOS SINTETIZADOS|RESOLUCIONES SINTETIZADAS|DISPOSICIONES SINTET?IZADAS|NORMAS COMPLETAS)([\s\S]*?)(?=(DECRETOS SINTETIZADOS|RESOLUCIONES SINTETIZADAS|DISPOSICIONES SINTET?IZADAS|NORMAS COMPLETAS|$))/g;
+            const sections = [];
+            let match;
+
+            while ((match = sectionsRegex.exec(text)) !== null) {
+                const sectionName = match[1].trim();
+                const sectionContent = match[2];
+                sections.push({
+                    sectionName: sectionName,
+                    sectionContent: sectionContent
+                });
+            }
+
+            const sectionProcessors = {
+                'DECRETOS SINTETIZADOS': processSynthesizedDecrees,
+                'RESOLUCIONES SINTETIZADAS': processResolucionesSintetizadas,
+                'DISPOSICIONES SINTETIZADAS': processDisposicionesSintetizadas,
+                'NORMAS COMPLETAS': processNormasCompletas,
+            };
+
+            sections.forEach(({sectionName, sectionContent}) => {
+                if (/DISPOSICIONES SINTEIZADAS/.test(sectionName)) {
+                    sectionName = 'DISPOSICIONES SINTETIZADAS';
+                }
+                const processor = sectionProcessors[sectionName];
+
+                if (processor) {
+                    content.push(...processor(sectionName, sectionContent));
+                }
             });
         }
-
-        const sectionProcessors = {
-            'DECRETOS SINTETIZADOS': processSynthesizedDecrees,
-            'RESOLUCIONES SINTETIZADAS': processResolucionesSintetizadas,
-            'DISPOSICIONES SINTETIZADAS': processDisposicionesSintetizadas,
-            'NORMAS COMPLETAS': processNormasCompletas,
-        };
-
-        let content = [];
-        sections.forEach(({sectionName, sectionContent}) => {
-            if (/DISPOSICIONES SINTEIZADAS/.test(sectionName)) {
-                sectionName = 'DISPOSICIONES SINTETIZADAS';
-            }
-            const processor = sectionProcessors[sectionName];
-
-            if (processor) {
-                content.push(...processor(sectionName, sectionContent));
-            }
-        });
 
         return content;
     } catch (error) {
