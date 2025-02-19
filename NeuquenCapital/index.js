@@ -18,7 +18,7 @@ module.exports = async function parseNeuquenCapitalPDF(pdfBuffer) {
             while ((match = regex.exec(text)) !== null) {
                 if (match[1].includes('D E C R E T O')) {
                     const decretoNumber = match[3];
-                    text.replace(/Que[\s\S]*?;\n/gm, match => {
+                    text = text.replace(/Que[\s\S]*?;\n/gm, match => {
                         return match.replace(/(?<!;)\n/g, ' ');
                     })
                         .replace(/Art[ií]culo \d+[°º][\s\S]*?\.\n/gm, match => {
@@ -31,7 +31,7 @@ module.exports = async function parseNeuquenCapitalPDF(pdfBuffer) {
                     });
                 } else if (match[1].includes('ORDENANZA')) {
                     const ordenanzaNumber = match[2];
-                    text.replace(/Que[\s\S]*?\.\n/gm, match => {
+                    text = text.replace(/Que[\s\S]*?\.\n/gm, match => {
                         return match.replace(/(?<!\.)\n/g, ' ');
                     })
                         .replace(/ART[IÍ]CULO \d+[°º][\s\S]*?\.-\n/gm, match => {
@@ -43,7 +43,7 @@ module.exports = async function parseNeuquenCapitalPDF(pdfBuffer) {
                         content: text
                     });
                 } else if (match[1].includes('EDICTO')) {
-                    text.replace(/\n/g, ' ').trim();
+                    text = text.replace(/\n/g, ' ').trim();
                     content.push({
                         title: `Auditoría Legislativa - EDICTOS - EDICTO`,
                         content: text
