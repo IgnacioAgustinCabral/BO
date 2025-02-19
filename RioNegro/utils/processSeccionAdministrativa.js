@@ -142,7 +142,12 @@ function processEdictosIPPV(text) {
     let match;
 
     while ((match = edictosIPPVRegex.exec(text)) !== null) {
-        let edictContent = match[0].replace(/-–—•—–-|––O––/g, '').trim();
+        let edictContent = match[0].replace(/-–—•—–-|––O––/g, '')
+            .replace(/Art[ií]culo \d+[\s\S]*?\. ?-\n/g, match => {
+                return match.replace(/\n/g, ' ')
+                    .replace(/$/g, '\n\n');
+            })
+            .trim();
         edicts.push({
             title: `Auditoría Legislativa - EDICTOS I.P.P.V. - EDICTO`,
             content: edictContent
