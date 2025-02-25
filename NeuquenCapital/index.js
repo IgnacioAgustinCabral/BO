@@ -48,6 +48,12 @@ module.exports = async function parseNeuquenCapitalPDF(pdfBuffer) {
                         title: `Auditoría Legislativa - EDICTOS - EDICTO`,
                         content: text
                     });
+                } else if (match[1].includes('R.O.')) {
+                    text = text.replace(/\n/g, ' ').trim();
+                    content.push({
+                        title: `Auditoría Legislativa - RESOLUCIONES - REGISTRO PÚBLICO DE OPOSICIÓN`,
+                        content: text
+                    });
                 }
             }
         } else {
