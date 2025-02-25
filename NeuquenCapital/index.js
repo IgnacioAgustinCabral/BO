@@ -7,55 +7,57 @@ module.exports = async function parseNeuquenCapitalPDF(pdfBuffer) {
         let text = await extractTextPromise(pdfPath);
         let content = [];
 
-        const specialBO = /EDICI[OÓ]N Nº \d+ \(ESPECIAL\)/;
+        const specialBO = /EDICI[OÓ]N N[°º] \d+ \(ESPECIAL\)/;
         if (specialBO.test(text)) {
             text = text.replace(/$/, '\n')
                 .replace(/\s*\d+\n\s*BOLET[IÍ]N OFICIAL MUNICIPAL\s*EDICI[OÓ]N N[°º] \d+ \(ESPECIAL\)\s*BOLET[IÍ]N(?:OFIC(?:IAL)?)?\s*NEUQU[EÉ]N, \d+ DE \w+ DE \d+[\s\S]*?\n\n/g, '\n')
                 .replace(/BOLET[IÍ]N\nOFICIAL[\s\S]*?P[aá]ginas? \d+ a \d+\n\n?/gm, '');
-            const regex = /(ORDENANZA N[°º] (\d+)\.-\n|D E C R E T O N[°º] *(\d+)\n|EDICTO\n)/gm;
-            let match;
 
-            while ((match = regex.exec(text)) !== null) {
-                if (match[1].includes('D E C R E T O')) {
-                    const decretoNumber = match[3];
-                    text = text.replace(/Que[\s\S]*?;\n/gm, match => {
-                        return match.replace(/(?<!;)\n/g, ' ');
-                    })
-                        .replace(/Art[ií]culo \d+[°º][\s\S]*?\.\n/gm, match => {
-                            return match.replace(/(?<!\.)\n/g, ' ');
-                        })
-                        .trim();
-                    content.push({
-                        title: `Auditoría Legislativa - DECRETOS - DECRETO N° ${decretoNumber}`,
-                        content: text
-                    });
-                } else if (match[1].includes('ORDENANZA')) {
-                    const ordenanzaNumber = match[2];
-                    text = text.replace(/Que[\s\S]*?\.\n/gm, match => {
+            if (text.includes('D E C R E T O')) {
+                const decretoNumber = text.match(/D E C R E T O N[°º] *(\d+)/)[1];
+                text = text.replace(/Que[\s\S]*?;\n/gm, match => {
+                    return match.replace(/(?<!;)\n/g, ' ');
+                })
+                    .replace(/Art[ií]culo \d+[°º][\s\S]*?\.\n/gm, match => {
                         return match.replace(/(?<!\.)\n/g, ' ');
                     })
-                        .replace(/ART[IÍ]CULO \d+[°º][\s\S]*?\.-\n/gm, match => {
-                            return match.replace(/(?<!\.)\n/g, ' ');
-                        })
-                        .trim();
-                    content.push({
-                        title: `Auditoría Legislativa - ORDENANZAS - ORDENANZA N° ${ordenanzaNumber}`,
-                        content: text
-                    });
-                } else if (match[1].includes('EDICTO')) {
-                    text = text.replace(/\n/g, ' ').trim();
-                    content.push({
-                        title: `Auditoría Legislativa - EDICTOS - EDICTO`,
-                        content: text
-                    });
-                } else if (match[1].includes('R.O.')) {
-                    text = text.replace(/\n/g, ' ').trim();
-                    content.push({
-                        title: `Auditoría Legislativa - RESOLUCIONES - REGISTRO PÚBLICO DE OPOSICIÓN`,
-                        content: text
-                    });
-                }
+                    .trim();
+                content.push({
+                    title: `Auditoría Legislativa - DECRETOS - DECRETO N° ${decretoNumber}`,
+                    content: text
+                });
+            } else if (text.includes('ORDENANZA')) {
+                const ordenanzaNumber = text.match(/ORDENANZA N[°º] (\d+)\.-\n/)[1];
+                text = text.replace(/Que[\s\S]*?\.\n/gm, match => {
+                    return match.replace(/(?<!\.)\n/g, ' ');
+                })
+                    .replace(/ART[IÍ]CULO \d+[°º][\s\S]*?\.-\n/gm, match => {
+                        return match.replace(/(?<!\.)\n/g, ' ');
+                    })
+                    .trim();
+                content.push({
+                    title: `Auditoría Legislativa - ORDENANZAS - ORDENANZA N° ${ordenanzaNumber}`,
+                    content: text
+                });
+            } else if (text.includes('EDICTO')) {
+                text = text.replace(/\n/g, ' ').trim();
+                content.push({
+                    title: `Auditoría Legislativa - EDICTOS - EDICTO`,
+                    content: text
+                });
+            } else if (text.includes('R.O.')) {
+                text = text.replace(/\n/g, ' ').trim();
+                content.push({
+                    title: `Auditoría Legislativa - RESOLUCIONES - REGISTRO PÚBLICO DE OPOSICIÓN`,
+                    content: text
+                });
+            } else {
+                content.push({
+                    title: `Auditoría Legislativa - BOLETÍN OFICIAL ESPECIAL`,
+                    content: text
+                });
             }
+
         } else {
 
             text = text.replace(/$/, '\n')// add \n at the end of the text
