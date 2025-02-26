@@ -7,33 +7,33 @@ module.exports = async function parseComodoroRivadaviaPDF(pdfBuffer) {
 
     text = text.replace(/BOLET[IÍ]N OFICIAL[\s\S]*?CUFRE, Ezequiel/g, '')
         .replace(/ {2}/g, ' ')
-        .replace(/ \n/g, '\n')
+        .replace(/ \n/g, '\n');
 
     content = content.concat(getResolutions(text))
-        .concat(getOrdenanzas(text))
+        .concat(getOrdenanzas(text));
 
     return content;
-}
+};
 
 function getResolutions(text) {
-    const resolutionRegex = /RESOLUCION N[º°] (\d+\.\d+)[\s\S]*?(?=RESOLUCION N[º°] \d+\.\d+|ORDENANZA N[º°] \d+\.\d+|$)/g;
+    const resolutionRegex = /(RESOLUCION N[º°] (\d+\.\d+)|RESOLUCION N[º°] (\d+))[\s\S]*?(?=RESOLUCION N[º°] \d+|RESOLUCION N[º°] (\d+\.\d+)|ORDENANZA N[º°] \d+\.\d+|$)/g;
     let resolutions = [];
 
     let match;
 
     while ((match = resolutionRegex.exec(text)) !== null) {
-        let resolutionTitle = match[1].replace(/\./, '').trim()
+        let resolutionTitle = match[1].replace(/\./, '').trim();
         let resolutionContent = match[0].trim();
 
         resolutions.push({
             title: 'Auditoría Legislativa - RESOLUCIÓN - ' + resolutionTitle,
             content: resolutionContent.replace(/^(Art)([\s\S]*?)(?=^(Art|$))/gm, match => {
                 return match.replace(/\n(?!Art)/g, ' ')
-                    .replace(/$/g, '\n')
+                    .replace(/$/g, '\n');
             })
                 .replace(/\n/g, '\n\n')
                 .trim()
-        })
+        });
     }
 
     return resolutions;
@@ -45,22 +45,22 @@ function getOrdenanzas(text) {
     let match;
 
     while ((match = ordenanzasRegex.exec(text)) !== null) {
-        let ordenanzaTitle = match[1].replace(/\./, '').trim()
+        let ordenanzaTitle = match[1].replace(/\./, '').trim();
         let ordenanzaContent = match[0].trim();
 
         ordenanzas.push({
             title: 'Auditoría Legislativa - ORDENANZA - ' + ordenanzaTitle,
             content: ordenanzaContent.replace(/EL CONCEJO DELIBERANTE DE LA CIUDAD DE COMODORO RIVADAVIA,\nSANCIONA CON FUERZA DE\n\nORDENANZA\n/g, 'EL CONCEJO DELIBERANTE DE LA CIUDAD DE COMODORO RIVADAVIA,SANCIONA CON FUERZA DE ORDENANZA\n') //format this section
                 .replace(/ARTICULO([\s\S]*?)(?=(ARTICULO|\.\n))/g, match => {
-                    return match.replace(/\n(?!ARTICULO)/g, ' ')// replaces \n except those preceded by ARTICULO
+                    return match.replace(/\n(?!ARTICULO)/g, ' ');// replaces \n except those preceded by ARTICULO
                 })
                 .replace(/\n/g, '\n\n')
                 .replace(/DADA[\s\S]*?\d+\./g, match => {
-                    return match.replace(/\n\n/g, ' ') //removes \n\n from section DADA ... 202X.
+                    return match.replace(/\n\n/g, ' '); //removes \n\n from section DADA ... 202X.
                 })
                 .replace(/^\n{2}/gm, '') //removes two \n
                 .trim()
-        })
+        });
     }
 
     return ordenanzas;
