@@ -29,7 +29,7 @@ module.exports = async function parseCaletaOliviaPDF(pdfBuffer) {
         .replace(/\n{2,}/gm, '\n')
         .replace(/O R D E N A N Z A S? S I N T E T I Z A D A S?.*$/gm, '')
         .replace(/(DECRETOS?|DECRETOS? SINTETIZADOS?)\n[\s\S]*?P[aá]gs?.*$/gm, '')
-        .replace(/ORDENANZAS ATRASADAS\n[\s\S]*?P[aá]gs?.*$/gm,'')
+        .replace(/ORDENANZAS ATRASADAS\n[\s\S]*?P[aá]gs?.*$/gm, '')
         .replace(/(ORDENANZAS?|ORDENANZAS? SINTETIZADAS?)\n[\s\S]*?P[aá]gs?.*$/gm, '')
         .replace(/(RESOLUCIONES BIDEPARTAMENTALES DE TIERRAS|RESOLUCIONES BIDEPARTAMENTALES DE TIERRAS SINTETIZADAS|RESOLUCI[OÓ]N BIDEPARTAMENTAL DE TIERRAS|RESOLUCI[OÓ]N BIDEPARTAMENTAL DE TIERRAS SINTETIZADA)\n[\s\S]*?P[aá]gs?.*$/gm, '')
         //sections
@@ -52,7 +52,7 @@ module.exports = async function parseCaletaOliviaPDF(pdfBuffer) {
         .replace(/(MUNI?CIPALIDAD DE CALETA OLIVIA\n)([\s\S]*?)(?=MUNI?CIPALIDAD DE CALETA OLIVIA\n|$)/g, (match) => {
             edicts.push(match);
             return '';
-        })
+        });
 
     articles = articles
         .concat(extractOrdenanzas(ordenanzas))
@@ -61,7 +61,7 @@ module.exports = async function parseCaletaOliviaPDF(pdfBuffer) {
         .concat(extractEdicts(edicts));
 
     return articles;
-}
+};
 
 
 function extractOrdenanzas(ordenanzasText) {
@@ -71,23 +71,31 @@ function extractOrdenanzas(ordenanzasText) {
         const ordenanzaTitle = ordenanza.match(ordenanzaRegex);
         ordenanzas.push({
             title: `Auditoría Legislativa - ORDENANZAS MUNICIPALES - ${ordenanzaTitle[0].trim()}`,
-            content: ordenanza.trim()
-        })
-    })
+            content: ordenanza
+                .replace(/^[\s\S]*?(?:(?<!\bSr)( -|\.|\.-|:|;|D E C R E T A))\n(?=[A-ZÁÉÍÓÚÑa-záéíóúñ *])/gm, match => {
+                    return match.replace(/\n(?!\n|$)/g, ' ');
+                })
+                .trim()
+        });
+    });
 
     return ordenanzas;
 }
 
 function extractDecrees(decreesText) {
     let decrees = [];
-    const decreeRegex = /(DECRETO N[º°] \d+) (MCO\/24\.-)/;
+    const decreeRegex = /(DECRETO N[º°] \d+) (MCO\/\d+\.-)/;
     decreesText.forEach(decreto => {
         const decreeTitle = decreto.match(decreeRegex);
         decrees.push({
             title: `Auditoría Legislativa - DECRETOS - ${decreeTitle[1].trim()}`,
-            content: decreto.trim()
-        })
-    })
+            content: decreto.replace(/\n{2,3}/g, '\n')
+                .replace(/^[\s\S]*?(?:(?<!\bSr)( -|\.|\.-|:|;|D E C R E T A))\n(?=[A-ZÁÉÍÓÚÑa-záéíóúñ *])/gm, match => {
+                    return match.replace(/\n(?!\n|$)/g, ' ');
+                })
+                .trim()
+        });
+    });
 
     return decrees;
 }
@@ -97,9 +105,13 @@ function extractEdicts(edictsText) {
     edictsText.forEach(edict => {
         edicts.push({
             title: 'Auditoría Legislativa - EDICTOS - EDICTO',
-            content: edict.trim()
-        })
-    })
+            content: edict
+                .replace(/^[\s\S]*?(?:(?<!\bSr)( -|\.|\.-|:|;|D E C R E T A))\n(?=[A-ZÁÉÍÓÚÑa-záéíóúñ *])/gm, match => {
+                    return match.replace(/\n(?!\n|$)/g, ' ');
+                })
+                .trim()
+        });
+    });
 
     return edicts;
 }
@@ -111,9 +123,13 @@ function extractResolutionsRBT(resolutionsRBTText) {
         const resolutionRBTTitle = resolutionRBT.match(resolutionRBTRegex);
         resolutionsRBT.push({
             title: `Auditoría Legislativa - RESOLUCIONES BIDEPARTAMENTALES DE TIERRAS - ${resolutionRBTTitle[0].trim()}`,
-            content: resolutionRBT.trim()
-        })
-    })
+            content: resolutionRBT
+                .replace(/^[\s\S]*?(?:(?<!\bSr)( -|\.|\.-|:|;|D E C R E T A))\n(?=[A-ZÁÉÍÓÚÑa-záéíóúñ *])/gm, match => {
+                    return match.replace(/\n(?!\n|$)/g, ' ');
+                })
+                .trim()
+        });
+    });
 
     return resolutionsRBT;
 }
