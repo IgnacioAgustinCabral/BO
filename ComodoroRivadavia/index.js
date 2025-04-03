@@ -16,7 +16,7 @@ module.exports = async function parseComodoroRivadaviaPDF(pdfBuffer) {
 };
 
 function getResolutions(text) {
-    const resolutionRegex = /(RESOLUCION N[º°] (\d+\.\d+)|RESOLUCION N[º°] (\d+))[\s\S]*?(?=RESOLUCION N[º°] \d+|RESOLUCION N[º°] (\d+\.\d+)|ORDENANZA N[º°] \d+\.\d+|$)/g;
+    const resolutionRegex = /(RESOLUCI[OÓ]N N[º°] (\d+\.\d+)|RESOLUCI[OÓ]N N[º°] (\d+))[\s\S]*?(?=RESOLUCI[OÓ]N N[º°] \d+|RESOLUCI[OÓ]N N[º°] (\d+\.\d+)|ORDENANZA N[º°] \d+\.\d+|$)/g;
     let resolutions = [];
 
     let match;
