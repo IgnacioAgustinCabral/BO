@@ -84,7 +84,7 @@ function extractOrdenanzas(ordenanzasText) {
 
 function extractDecrees(decreesText) {
     let decrees = [];
-    const decreeRegex = /(DECRETO N[º°] \d+) (MCO\/\d+\.-)/;
+    const decreeRegex = /(DECRETO N[º°] \d+)/;
     decreesText.forEach(decreto => {
         const decreeTitle = decreto.match(decreeRegex);
         decrees.push({
