@@ -66,7 +66,7 @@ module.exports = async function parseCaletaOliviaPDF(pdfBuffer) {
 
 function extractOrdenanzas(ordenanzasText) {
     let ordenanzas = [];
-    const ordenanzaRegex = /ORDENANZA (MUNICIPAL )?N[º°] ?\d+/;
+    const ordenanzaRegex = /ORDENANZA (MUNICIPAL )?N[º°] ?([\d+\.]*)/;
     ordenanzasText.forEach(ordenanza => {
         const ordenanzaTitle = ordenanza.match(ordenanzaRegex);
         ordenanzas.push({
